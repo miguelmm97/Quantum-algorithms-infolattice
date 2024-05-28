@@ -3,16 +3,12 @@
 # Built-in modules
 import math
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
 # Imports from Qiskit
 from qiskit import QuantumCircuit
-from qiskit.circuit.library import GroverOperator, MCMT, ZGate
-from qiskit.quantum_info import DensityMatrix
-from qiskit.visualization import plot_distribution
+from qiskit.circuit.library import GroverOperator, MCMT, ZGate, HGate
 
-# Imports from Qiskit Runtime
-from qiskit_ibm_runtime import QiskitRuntimeService
-from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 
 #%% Functions
@@ -42,7 +38,7 @@ def grover_oracle(marked_states):
 #%% Circuit
 
 # Create oracle
-marked_states = ['10']
+marked_states = ['100100']
 oracle = grover_oracle(marked_states)
 
 # Create Grover step
@@ -56,16 +52,6 @@ qc.compose(grover_op.power(optimal_iter), inplace=True)
 
 # Measure all qubits
 qc.measure_all()
-
-#%% Evolving quantum states through the circuit
-qc = QuantumCircuit()
-
-marked_states = ['10']
-step1 = qc.h()
-
-psi_0 = DensityMatrix.from_label('10')
-psi_1 = psi_0.evolve(oracle)
-psi_2 = psi_0.evolve(grover_op)
 
 
 #%% Figures
@@ -81,3 +67,4 @@ fig3 = qc.draw(output="mpl", style="iqp")
 ax3 = fig3.gca()
 ax3.set_title('Full Grover circuit', fontsize=20)
 plt.show()
+
