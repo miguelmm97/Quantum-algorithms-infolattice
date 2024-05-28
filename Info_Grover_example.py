@@ -9,6 +9,7 @@ from matplotlib.gridspec import GridSpec
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import GroverOperator, MCMT, ZGate, HGate
 from qiskit.quantum_info import Statevector
+from qiskit.quantum_info.operators import Operator
 
 # Information lattice
 from InfoLattice import calc_info, plot_info_latt
@@ -41,45 +42,58 @@ def grover_oracle(marked_states):
 #%% Evolving quantum states through the circuit
 
 # Circuit details
-marked_states = ['1000']
+marked_states = ['100']
 num_qubits = len(marked_states[0])
-oracle_infolatt = grover_oracle(marked_states)
-grover_op_infolatt = GroverOperator(oracle_infolatt, insert_barriers=True)
+oracle = grover_oracle(marked_states)
+grover_op = GroverOperator(oracle, insert_barriers=True)
+optimal_iter = math.floor(math.pi / (4 * math.asin(math.sqrt(len(marked_states) / 2 ** grover_op.num_qubits))))
 
 # Initial state
-qc_infolatt = QuantumCircuit(num_qubits)
-psi0 = Statevector.from_label('1000')
+qc = QuantumCircuit(num_qubits)
+psi0 = Statevector.from_label('000')
 info0 = calc_info(psi0.data)
 
 # First step: Hadamard transform
-qc_infolatt.h(range(num_qubits))
-psi1 = psi0.evolve(qc_infolatt)
+qc.h(range(num_qubits))
+psi1 = psi0.evolve(qc)
 info1 = calc_info(psi1.data)
 
 # Second step: grover iteration 1
-qc_infolatt.compose(grover_op_infolatt, inplace=True)
-psi2 = psi0.evolve(qc_infolatt)
+qc.compose(grover_op, inplace=True)
+psi2 = psi0.evolve(qc)
 info2 = calc_info(psi2.data)
 
 # Third step: grover iteration 2
-qc_infolatt.compose(grover_op_infolatt, inplace=True)
-psi3 = psi0.evolve(qc_infolatt)
+qc.compose(grover_op, inplace=True)
+psi3 = psi0.evolve(qc)
 info3 = calc_info(psi3.data)
 
 
 #%% Figures
-fig = plt.figure(figsize=(6, 8))
-gs = GridSpec(2, 2, figure=fig, wspace=0.5, hspace=0.5)
-ax1 = fig.add_subplot(gs[0, 0])
-ax2 = fig.add_subplot(gs[0, 1])
-ax3 = fig.add_subplot(gs[1, 0])
-ax4 = fig.add_subplot(gs[1, 1])
+fig1 = plt.figure(figsize=(6, 8))
+gs = GridSpec(2, 2, figure=fig1, wspace=0.5, hspace=0.5)
+ax1 = fig1.add_subplot(gs[0, 0])
+ax2 = fig1.add_subplot(gs[0, 1])
+ax3 = fig1.add_subplot(gs[1, 0])
+ax4 = fig1.add_subplot(gs[1, 1])
 
 plot_info_latt(info0, ax1)
-plot_info_latt(info0, ax2)
-plot_info_latt(info0, ax3)
-plot_info_latt(info0, ax4)
-qc_infolatt.draw(output="mpl", style="iqp")
+ax1.set_title('Step 0')
+plot_info_latt(info1, ax2)
+ax2.set_title('Step 1')
+plot_info_latt(info2, ax3)
+ax3.set_title('Step 2')
+plot_info_latt(info3, ax4)
+ax4.set_title('Step 3')
+
+fig2 = grover_op.decompose().draw(output="mpl", style="iqp")
+ax2 = fig2.gca()
+ax2.set_title('Grover iteration', fontsize=20)
+
+fig3 = qc.draw(output="mpl", style="iqp")
+ax3 = fig3.gca()
+ax3.set_title('Full Grover circuit', fontsize=20)
+
 plt.show()
 
 

@@ -132,12 +132,12 @@ def calc_entropies(psi):
     for l in range(1, L + 1):
         SvN[l] = []
         for n in range(L - l + 1):
-            print("l",l-1)
-            print("n",n)
+            # print("l",l-1)
+            # print("n",n)
             psi_r = reshape_psi(psi, n, l)
             subsystem_S_vN = S_vN(psi_r)
             SvN[l].append(subsystem_S_vN)
-            print("subsystem_S_vN", subsystem_S_vN)
+            # print("subsystem_S_vN", subsystem_S_vN)
         SvN[l] = np.array(SvN[l])
     return SvN
 
@@ -250,6 +250,7 @@ def plot_info_latt(info_latt, ax):
     ax.set_xlim([-2*r,1])
     ax.set_ylim([-2*r,1+2*r])
     ax.set_aspect('equal')
+    ax.axis('off')
 
 
 def singlet(L):
