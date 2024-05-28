@@ -42,7 +42,7 @@ def grover_oracle(marked_states):
 #%% Evolving quantum states through the circuit
 
 # Circuit details
-marked_states = ['100']
+marked_states = ['1010000']
 num_qubits = len(marked_states[0])
 oracle = grover_oracle(marked_states)
 grover_op = GroverOperator(oracle, insert_barriers=True)
@@ -50,7 +50,7 @@ optimal_iter = math.floor(math.pi / (4 * math.asin(math.sqrt(len(marked_states) 
 
 # Initial state
 qc = QuantumCircuit(num_qubits)
-psi0 = Statevector.from_label('000')
+psi0 = Statevector.from_label('0000000')
 info0 = calc_info(psi0.data)
 
 # First step: Hadamard transform
@@ -68,6 +68,29 @@ qc.compose(grover_op, inplace=True)
 psi3 = psi0.evolve(qc)
 info3 = calc_info(psi3.data)
 
+# Third step: grover iteration 2
+qc.compose(grover_op, inplace=True)
+psi4 = psi0.evolve(qc)
+info4 = calc_info(psi4.data)
+
+# Third step: grover iteration 2
+qc.compose(grover_op, inplace=True)
+psi5 = psi0.evolve(qc)
+info5 = calc_info(psi5.data)
+
+# Third step: grover iteration 2
+qc.compose(grover_op, inplace=True)
+psi6 = psi0.evolve(qc)
+info6 = calc_info(psi6.data)
+
+qc.compose(grover_op, inplace=True)
+psi7 = psi0.evolve(qc)
+info7 = calc_info(psi7.data)
+
+qc.compose(grover_op, inplace=True)
+psi8 = psi0.evolve(qc)
+info8 = calc_info(psi8.data)
+
 
 #%% Figures
 fig1 = plt.figure(figsize=(6, 8))
@@ -77,13 +100,13 @@ ax2 = fig1.add_subplot(gs[0, 1])
 ax3 = fig1.add_subplot(gs[1, 0])
 ax4 = fig1.add_subplot(gs[1, 1])
 
-plot_info_latt(info0, ax1)
+plot_info_latt(info5, ax1)
 ax1.set_title('Step 0')
-plot_info_latt(info1, ax2)
+plot_info_latt(info6, ax2)
 ax2.set_title('Step 1')
-plot_info_latt(info2, ax3)
+plot_info_latt(info7, ax3)
 ax3.set_title('Step 2')
-plot_info_latt(info3, ax4)
+plot_info_latt(info8, ax4)
 ax4.set_title('Step 3')
 
 fig2 = grover_op.decompose().draw(output="mpl", style="iqp")
