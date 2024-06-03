@@ -219,7 +219,8 @@ def calc_info_per_scale(info_latt, bc='periodic'):
     '''
 
     L = len(info_latt)
-    info_per_scale = {}
+    info_per_scale = np.zeros((L,))
+    # info_per_scale = {}
 
     if bc == 'periodic':
         for l in range(1, L//2 + 2):
@@ -231,8 +232,8 @@ def calc_info_per_scale(info_latt, bc='periodic'):
                 else:
                     info_per_scale[l] = np.sum(info_latt[l]) + np.sum(info_latt[L-l+2])
     elif bc == 'open':
-        for l in info_latt:
-            info_per_scale[l] = np.sum(info_latt[l])
+        for l in range(1, L + 1):
+            info_per_scale[l-1] = np.sum(info_latt[l])
 
     else:
         raise ValueError('boundary condition must be "periodic" or "open"')
