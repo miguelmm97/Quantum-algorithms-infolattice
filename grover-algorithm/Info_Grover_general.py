@@ -28,10 +28,10 @@ from functions import (calc_info, plot_info_latt, calc_info_per_scale, grover_or
 #%% Definitions and parameters
 
 # Circuit details
-marked_state_str = '110001'
+marked_state_str = '1000000000001'
+phi0_str         = '0000000000000'
 marked_states    = [marked_state_str]
 num_qubits       = len(marked_states[0])
-phi0_str         = '000000'
 
 # Iteration number
 dim_H = 2 ** len(marked_state_str)
@@ -44,9 +44,12 @@ final_prob = np.sin((2 * np.ceil(n_iter) + 1) * theta0 / 2)
 # Definitions
 info_dict = {}
 info_per_scale = np.zeros((n_iter + 1, num_qubits))
+mean_info = np.zeros((n_iter + 1,))
+median_info = np.zeros((n_iter + 1, ))
 l_rescaled = np.arange(0, num_qubits) / (num_qubits - 1)
 t_rescaled = np.arange(0, n_iter + 1) / optimal_iter1
 norm_info_per_scale = num_qubits
+neg_tol = -1e-12
 
 # Circuit instance
 oracle = grover_oracle(marked_states)
@@ -57,50 +60,60 @@ if psi0.num_qubits != num_qubits:
     raise ValueError('Number of qubits of initial and marked states does not coincide.')
 
 
-#%% Information lattice and information peer scale
+#%% Information lattice and information per scale
 # Circuit evolution: Hadamard transform
 qc.h(range(num_qubits))
 info_dict[0] = calc_info(psi0.evolve(qc).data)
 state = psi0.evolve(qc)
+# Debug
+for key in info_dict[0].keys():
+    if any(info_dict[0][key] < neg_tol):
+        raise ValueError(f'Negative mutual information: step {0} | scale {key}')
 
-# Circuit evolution: Grover iterations
+
 for i in range(1, n_iter + 1):
+    # Circuit evolution: Grover iterations and information lattice
     print(f'iter: {i} / {n_iter}')
     qc.compose(grover_op, inplace=True)
-    info_dict[i] = calc_info(psi0.evolve(qc).data)
-    state = psi0.evolve(qc)
+    info_dict[i] = calc_info(state.evolve(grover_op).data)
+    state = state.evolve(grover_op)
+    # Debug
+    for key in info_dict[i].keys():
+        if any(info_dict[i][key] < neg_tol):
+            raise ValueError(f'Negative mutual information: step {i} | scale {key}')
+
 
 # Information per scale
 for step in info_dict.keys():
     info_per_scale[step, :] = calc_info_per_scale(info_dict[step], bc='open')
+    # Debug
     if not np.allclose(np.sum(info_per_scale[step, :]), num_qubits, atol=1e-15):
         raise ValueError(f'Information per scale does not add up! Error: {np.abs(num_qubits - np.sum(info_per_scale[step]))}')
 
 
-#%% Statistics of the information
-mean_info = np.zeros((n_iter + 1,))
-median_info = np.zeros((n_iter + 1, ))
-
+# Statistical parameters
 for step in range(info_per_scale.shape[0]):
     prob_scale = info_per_scale[step, :] / norm_info_per_scale
-    mean_info[step] = np.dot(prob_scale, l_rescaled) / len(info_per_scale)
+    mean_info[step] = np.dot(prob_scale, l_rescaled)
     median_info[step] = median(l_rescaled, prob_scale)
+    # Debug
+    if not np.allclose(np.sum(prob_scale), 1, atol=1e-15):
+        raise ValueError(f'Probability distribution is not normalised')
 
-
-
+print(len(info_per_scale))
 #%% Saving data
-
-file_list = os.listdir('../Data')
+file_list = os.listdir('../../data-grover')
 expID = get_fileID(file_list, common_name='Experiment')
 filename = '{}{}{}'.format('Experiment', expID, '.h5')
-filepath = os.path.join('../Data', filename)
+filepath = os.path.join('../../data-grover', filename)
 
 with h5py.File(filepath, 'w') as f:
 
     # Simulation folder
     simulation = f.create_group('Simulation')
     store_my_data(simulation, 'info_per_scale',  info_per_scale)
-    store_my_data(simulation,  'mean_info',      mean_info)
+    store_my_data(simulation, 'mean_info',       mean_info)
+    store_my_data(simulation, 'median_info',     median_info)
 
     # Parameters folder
     parameters = f.create_group('Parameters')
@@ -159,29 +172,6 @@ ax2.tick_params(which='major', length=10, labelsize=15)
 ax2.legend(loc='best', ncol=2, fontsize=10, frameon=False)
 ax2.set_title(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter1}')
 
-# Statistics
-fig3 = plt.figure(figsize=(9, 6))
-gs = GridSpec(2, 2, figure=fig3)
-ax3_1 = fig3.add_subplot(gs[:, 0:1])
-ax3_2 = fig3.add_subplot(gs[:, 1:])
-
-ax3_1.plot(t_rescaled, mean_info, marker='o', color=palette1[n_iter])
-ax3_1.plot(t_rescaled, mean_info, color=palette1[n_iter])
-ax3_1.set_xlim(0, 1)
-ax3_1.set_ylim(0, np.max(mean_info) + 0.1 * np.max(mean_info))
-ax3_1.set_xlabel("$t/t_{opt}$", fontsize=20)
-ax3_1.set_ylabel("$\\langle l \\rangle$", fontsize=20)
-ax3_1.tick_params(which='major', width=0.75, labelsize=15)
-ax3_1.tick_params(which='major', length=10, labelsize=15)
-
-ax3_2.plot(t_rescaled, median_info, marker='o', color=palette1[n_iter])
-ax3_2.plot(t_rescaled, median_info, color=palette1[n_iter])
-ax3_2.set_xlim(0, 1)
-ax3_2.set_ylim(0, np.max(median_info) + 0.1 * np.max(median_info))
-ax3_2.set_xlabel("$t/t_{opt}$", fontsize=20)
-# ax3_2.set_ylabel("$\\langle l \\rangle$", fontsize=20)
-ax3_2.tick_params(which='major', width=0.75, labelsize=15)
-ax3_2.tick_params(which='major', length=10, labelsize=15)
 
 
 
