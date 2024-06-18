@@ -1,11 +1,17 @@
 #%% Imports
 
-# Built-in modules
+# Math and plotting
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 import seaborn
+
+# Managing data
+import h5py
+import os
+import sys
+from datetime import date
 
 # Imports from Qiskit
 from qiskit import QuantumCircuit
@@ -14,83 +20,99 @@ from qiskit.quantum_info import Statevector
 from qiskit.quantum_info.operators import Operator
 
 # Information lattice
-from InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
+from functions import (calc_info, plot_info_latt, calc_info_per_scale, grover_oracle, get_fileID, store_my_data,
+                       attr_my_data, median)
 
 
-#%% Functions
-def grover_oracle(marked_states):
 
-    if not isinstance(marked_states, list):
-        raise TypeError('marked_states should be a list of states in the computational basis.')
-
-    # Initialise the circuit
-    num_qubits = len(marked_states[0])
-    qc = QuantumCircuit(num_qubits)
-
-    # Mark each target state in the input list
-    for target in marked_states:
-
-        # Flip target bit-string to match Qiskit bit-ordering
-        rev_target = target[::-1]
-
-        # Create circuit that maps the target states
-        zero_indx = [ind for ind in range(num_qubits) if rev_target.startswith('0', ind)]
-        qc.x(zero_indx)
-        qc.compose(MCMT(ZGate(), num_qubits - 1, 1), inplace=True)
-        qc.x(zero_indx)
-
-    return qc
-
-#%% Evolving quantum states through the circuit
+#%% Definitions and parameters
 
 # Circuit details
-marked_state_str = '100000'
-marked_states = [marked_state_str]
-num_qubits = len(marked_states[0])
+marked_state_str = '110001'
+marked_states    = [marked_state_str]
+num_qubits       = len(marked_states[0])
+phi0_str         = '000000'
+
+# Iteration number
+dim_H = 2 ** len(marked_state_str)
+theta0 = 2 * np.arccos(np.sqrt((dim_H - len(marked_states)) / dim_H))
+optimal_iter1 = math.floor(math.pi / (4 * math.asin(math.sqrt(len(marked_states) / 2 ** num_qubits))))
+optimal_iter2 = 0.5 * (np.pi / theta0 - 1)
+n_iter = optimal_iter1
+final_prob = np.sin((2 * np.ceil(n_iter) + 1) * theta0 / 2)
+
+# Definitions
+info_dict = {}
+info_per_scale = np.zeros((n_iter + 1, num_qubits))
+l_rescaled = np.arange(0, num_qubits) / (num_qubits - 1)
+t_rescaled = np.arange(0, n_iter + 1) / optimal_iter1
+norm_info_per_scale = num_qubits
+
+# Circuit instance
 oracle = grover_oracle(marked_states)
 grover_op = GroverOperator(oracle, insert_barriers=True)
-optimal_iter = math.floor(math.pi / (4 * math.asin(math.sqrt(len(marked_states) / 2 ** grover_op.num_qubits))))
-info_dict = {}
-n_iter = optimal_iter
-
-
-# Probabilities for different iteration number
-dim_H = 2 ** len(marked_state_str)
-theta0 = 2 * np.arccos(np.sqrt((dim_H - len(marked_states))/ dim_H))
-total_iter = 0.5 * (np.pi / theta0 - 1)
-final_prob = np.sin((2 * np.ceil(total_iter) + 1) * theta0 / 2)
-
-# Initial state
 qc = QuantumCircuit(num_qubits)
-qc.h(range(num_qubits))
-phi0_str = '100001'
 psi0 = Statevector.from_label(phi0_str)
-info_dict[0] = calc_info(psi0.evolve(qc).data)
-
-# Debug
 if psi0.num_qubits != num_qubits:
     raise ValueError('Number of qubits of initial and marked states does not coincide.')
 
+
+#%% Information lattice and information peer scale
+# Circuit evolution: Hadamard transform
+qc.h(range(num_qubits))
+info_dict[0] = calc_info(psi0.evolve(qc).data)
 state = psi0.evolve(qc)
-# Grover iterations
+
+# Circuit evolution: Grover iterations
 for i in range(1, n_iter + 1):
-    print(f'iter: {i}')
+    print(f'iter: {i} / {n_iter}')
     qc.compose(grover_op, inplace=True)
     info_dict[i] = calc_info(psi0.evolve(qc).data)
     state = psi0.evolve(qc)
 
-
-#%% Information per scale
-info_per_scale = {}
+# Information per scale
 for step in info_dict.keys():
-    info_per_scale[step] = calc_info_per_scale(info_dict[step], bc='open')
-l_rescaled = np.arange(0, num_qubits) / (num_qubits  -1)
-
-# Debug
-for step in info_per_scale.keys():
-    if not np.allclose(np.sum(info_per_scale[step]), num_qubits, atol=1e-15):
+    info_per_scale[step, :] = calc_info_per_scale(info_dict[step], bc='open')
+    if not np.allclose(np.sum(info_per_scale[step, :]), num_qubits, atol=1e-15):
         raise ValueError(f'Information per scale does not add up! Error: {np.abs(num_qubits - np.sum(info_per_scale[step]))}')
 
+
+#%% Statistics of the information
+mean_info = np.zeros((n_iter + 1,))
+median_info = np.zeros((n_iter + 1, ))
+
+for step in range(info_per_scale.shape[0]):
+    prob_scale = info_per_scale[step, :] / norm_info_per_scale
+    mean_info[step] = np.dot(prob_scale, l_rescaled) / len(info_per_scale)
+    median_info[step] = median(l_rescaled, prob_scale)
+
+
+
+#%% Saving data
+
+file_list = os.listdir('../Data')
+expID = get_fileID(file_list, common_name='Experiment')
+filename = '{}{}{}'.format('Experiment', expID, '.h5')
+filepath = os.path.join('../Data', filename)
+
+with h5py.File(filepath, 'w') as f:
+
+    # Simulation folder
+    simulation = f.create_group('Simulation')
+    store_my_data(simulation, 'info_per_scale',  info_per_scale)
+    store_my_data(simulation,  'mean_info',      mean_info)
+
+    # Parameters folder
+    parameters = f.create_group('Parameters')
+    store_my_data(parameters, 'marked_state_str', marked_state_str)
+    store_my_data(parameters, 'num_qubits',       num_qubits)
+    store_my_data(parameters, 'phi0_str',         phi0_str)
+    store_my_data(parameters, 'n_iter',           n_iter)
+    store_my_data(parameters, 'opt_iter',         optimal_iter1)
+
+    # Attributes
+    attr_my_data(parameters, "Date",       str(date.today()))
+    attr_my_data(parameters, "Code_path",  sys.argv[0])
 
 
 #%% Figures
@@ -118,14 +140,14 @@ for i in range(n_iter + 1):
         else:
             ax = fig1.add_subplot(gs[1, int((n_iter + 1) / 2) - 1])
     plot_info_latt(info_dict[i], ax)
-    ax.set_title(f't: {i / optimal_iter:.2f}')
-fig1.suptitle(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter}')
+    ax.set_title(f't: {i / optimal_iter1:.2f}')
+fig1.suptitle(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter1}')
 
 # Information per scale per iteration
 fig2 = plt.figure(figsize=(8, 6.5))
 ax2 = fig2.gca()
 for step in info_dict.keys():
-    ax2.plot(l_rescaled, info_per_scale[step], marker="o", label=f't = {step / optimal_iter:.2f}', color=palette1[step])
+    ax2.plot(l_rescaled, info_per_scale[step], marker="o", label=f't = {step / optimal_iter1:.2f}', color=palette1[step])
     ax2.plot(l_rescaled, info_per_scale[step], color=palette1[step])
 ax2.set_xlim(0, 1)
 ax2.set_ylim(1e-2, 10)
@@ -135,40 +157,32 @@ ax2.set_ylabel("$\log{(i_l)}$", fontsize=20)
 ax2.tick_params(which='major', width=0.75, labelsize=15)
 ax2.tick_params(which='major', length=10, labelsize=15)
 ax2.legend(loc='best', ncol=2, fontsize=10, frameon=False)
-ax2.set_title(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter}')
+ax2.set_title(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter1}')
 
+# Statistics
+fig3 = plt.figure(figsize=(9, 6))
+gs = GridSpec(2, 2, figure=fig3)
+ax3_1 = fig3.add_subplot(gs[:, 0:1])
+ax3_2 = fig3.add_subplot(gs[:, 1:])
 
+ax3_1.plot(t_rescaled, mean_info, marker='o', color=palette1[n_iter])
+ax3_1.plot(t_rescaled, mean_info, color=palette1[n_iter])
+ax3_1.set_xlim(0, 1)
+ax3_1.set_ylim(0, np.max(mean_info) + 0.1 * np.max(mean_info))
+ax3_1.set_xlabel("$t/t_{opt}$", fontsize=20)
+ax3_1.set_ylabel("$\\langle l \\rangle$", fontsize=20)
+ax3_1.tick_params(which='major', width=0.75, labelsize=15)
+ax3_1.tick_params(which='major', length=10, labelsize=15)
 
-# fig3 = plt.figure(figsize=(20, 7.5))
-# gs = GridSpec(2, 5, figure=fig3, wspace=0.5, hspace=0.5)
-#
-# for i in range(n_iter + 1):
-#     if ((n_iter + 1) % 2) == 0:
-#         if i < int((n_iter + 1)/ 2):
-#             ax = fig3.add_subplot(gs[0, i])
-#         else:
-#             ax = fig3.add_subplot(gs[1, i % int((n_iter + 1)/ 2)])
-#     else:
-#         if i <= int((n_iter + 1) / 2):
-#             ax = fig3.add_subplot(gs[0, i])
-#         elif i != (n_iter + 1) - 1:
-#             ax = fig3.add_subplot(gs[1, (i % int((n_iter + 1) / 2)) - 1])
-#         else:
-#             ax = fig3.add_subplot(gs[1, int((n_iter + 1) / 2) - 1])
-#
-#     ax.plot(l_rescaled, info_per_scale[i], marker="o", label=f't = {i / optimal_iter}', color=color_list[7])
-#     ax.plot(l_rescaled, info_per_scale[i], alpha=0.3)
-#     ax.set_xlim(0, 1)
-#     ax.set_ylim(1e-2, 10)
-#     ax.set_xlabel("$l/l_{max}$", fontsize=20)
-#     ax.set_ylabel("$i_l$", fontsize=20)
-#     ax.set_yscale('log')
-#     ax.tick_params(which='major', width=0.75, labelsize=15)
-#     ax.tick_params(which='major', length=10, labelsize=15)
-#     ax.set_title(f'$G^{i}$', fontsize=20)
+ax3_2.plot(t_rescaled, median_info, marker='o', color=palette1[n_iter])
+ax3_2.plot(t_rescaled, median_info, color=palette1[n_iter])
+ax3_2.set_xlim(0, 1)
+ax3_2.set_ylim(0, np.max(median_info) + 0.1 * np.max(median_info))
+ax3_2.set_xlabel("$t/t_{opt}$", fontsize=20)
+# ax3_2.set_ylabel("$\\langle l \\rangle$", fontsize=20)
+ax3_2.tick_params(which='major', width=0.75, labelsize=15)
+ax3_2.tick_params(which='major', length=10, labelsize=15)
 
-
-# fig3.suptitle(f'Optimal iteration: {optimal_iter}')
 
 
 # fig4 = grover_op.decompose().draw(output="mpl", style="iqp")
