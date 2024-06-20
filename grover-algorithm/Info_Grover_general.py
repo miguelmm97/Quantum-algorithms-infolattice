@@ -28,8 +28,8 @@ from functions import (calc_info, plot_info_latt, calc_info_per_scale, grover_or
 #%% Definitions and parameters
 
 # Circuit details
-marked_state_str = '1000000000001'
-phi0_str         = '0000000000000'
+marked_state_str = '1000'
+phi0_str         = '0000'
 marked_states    = [marked_state_str]
 num_qubits       = len(marked_states[0])
 
@@ -173,11 +173,28 @@ ax2.legend(loc='best', ncol=2, fontsize=10, frameon=False)
 ax2.set_title(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter1}')
 
 
+fig3 = plt.figure(figsize=(6, 5))
+gs = GridSpec(2, 6, figure=fig3)
+ax3_1 = fig3.add_subplot(gs[:, :2])
+ax3_2 = fig3.add_subplot(gs[:, 2:])
+
+qc.draw(output="mpl", style="iqp", ax=ax3_1)
+grover_op.decompose().draw(output="mpl", style="iqp", ax=ax3_2)
+
+fig4 = plt.figure(figsize=(6, 5))
+gs = GridSpec(2, 4, figure=fig4)
+ax4_1 = fig3.add_subplot(gs[:, :2])
+ax4_2 = fig3.add_subplot(gs[:, 2:])
 
 
-# fig4 = grover_op.decompose().draw(output="mpl", style="iqp")
-# ax4 = fig4.gca()
-# ax4.set_title('Grover iteration', fontsize=20)
+
+
+
+
 plt.show()
+# fig1.savefig(f'{expID}-info-lattice.pdf', format='pdf', backend='pgf')
+# fig2.savefig(f'{expID}-info-scale.pdf', format='pdf', backend='pgf')
+# fig3.savefig(f'{expID}-iteration.pdf', format='pdf', backend='pgf')
+# fig4.savefig(f'{expID}-algorithm.pdf', format='pdf', backend='pgf', bbox_inches='tight')
 
 

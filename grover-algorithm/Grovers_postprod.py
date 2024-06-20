@@ -88,6 +88,8 @@ for i, key in enumerate(data_dict.keys()):
              label=f'$n=$ {num_qubits}, 'f'$|\psi_m\\rangle=$ {marked_state}')
     ax2.plot(t_rescaled, median_info, color=palette[i % 2], alpha=0.1)
 
-ax1.legend(loc='best', ncol=3, fontsize=10, frameon=False)
-ax2.legend(loc='best', ncol=3, fontsize=10, frameon=False)
+ax1.legend(loc='best', ncol=4, fontsize=7, frameon=False)
+ax2.legend(loc='best', ncol=4, fontsize=7, frameon=False)
 plt.show()
+fig1.savefig('mean_scale.pdf', format='pdf', backend='pgf')
+fig2.savefig('median_scale.pdf', format='pdf', backend='pgf')
