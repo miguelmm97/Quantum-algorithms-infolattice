@@ -14,34 +14,45 @@ import h5py
 import os
 
 
-def deutsch_function(num_qubits):
+# Algorithms
+def deutsch_function(num_qubits, return_info=False):
+    """
+    Returns a Deutsch-Joza function circuit implementation that with 50% chance is constant or balanced.
+    """
 
+    info = 'balanced'
     qc = QuantumCircuit(num_qubits + 1)
 
+    # Flip target qubit to generate any of the four cases of f(x)
     if np.random.randint(0, 2):
         qc.x(num_qubits)
+
+    # Return constant circuit with 1/2 probability: All 1s if target is flipped or 0s otherwise
     if np.random.randint(0, 2):
-        return qc
+        info = 'constant'
+        return qc, info if return_info else qc
 
-    # Choose half of the possible states in H
-    constant_states = np.random.choice(range(2 ** num_qubits), (2 ** num_qubits) // 2,  replace=False)
+    # Balanced circuit: 1) Choose half of the states in H
+    half_states = np.random.choice(range(2 ** num_qubits), (2 ** num_qubits) // 2,  replace=False)
 
+    # 2) Add X gates wherever a qubit is |1 >
     def add_cx(qc, bit_string):
         for qubit, bit in enumerate(reversed(bit_string)):
             if bit == "1": qc.x(qubit)
         return qc
 
-    # Flip the control qubit for states that are not constant
-    for state in constant_states:
+    # 3) Apply controlled X operations for all states in the list
+    for state in half_states:
         qc.barrier()
-        qc = add_cx(qc, f"{state:0b}")
+        qc = add_cx(qc, f'{state:0b}')
         qc.mcx(list(range(num_qubits)), num_qubits)
-        qc = add_cx(qc, f"{state:0b}")
+        qc = add_cx(qc, f'{state:0b}')
 
     qc.barrier()
 
-    return qc
+    return qc, info if return_info else qc
 
+# Information lattice
 def reshape_psi(psi, n, l):
     '''
 
@@ -201,6 +212,25 @@ def plot_info_latt(info_latt, ax):
     ax.set_aspect('equal')
     ax.axis('off')
 
+def median(x, P):
+
+    acc_prob = 0
+    for i in range(len(x)):
+        acc_prob += P[i]
+        if acc_prob > 1/2 and i > 0:
+            if P[i] >= P[i - 1]:
+                percent = 1 - P[i - 1] / P[i]
+            else:
+                percent = P[i] / P[i - 1]
+            med = x[i-1] + percent * x[i]
+            break
+        elif acc_prob > 1/2 and i == 0:
+            med = x[0]
+
+    return med
+
+
+# Managing data
 def get_fileID(file_list, common_name='datafile'):
     expID = 0
     for file in file_list:
@@ -248,7 +278,6 @@ def load_my_data(file_list, directory):
 
     return data_dict
 
-
 def load_my_attr(file_list, directory, dataset):
     attr_dict = {}
 
@@ -264,19 +293,4 @@ def load_my_attr(file_list, directory, dataset):
 
     return attr_dict
 
-def median(x, P):
 
-    acc_prob = 0
-    for i in range(len(x)):
-        acc_prob += P[i]
-        if acc_prob > 1/2 and i > 0:
-            if P[i] >= P[i - 1]:
-                percent = 1 - P[i - 1] / P[i]
-            else:
-                percent = P[i] / P[i - 1]
-            med = x[i-1] + percent * x[i]
-            break
-        elif acc_prob > 1/2 and i == 0:
-            med = x[0]
-
-    return med
