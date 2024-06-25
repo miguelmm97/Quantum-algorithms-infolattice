@@ -32,12 +32,34 @@ black_box, type_func = deutsch_function(n_qubits, return_info=True)
 
 # Information
 n_steps = 3
-info_dict = {}
 neg_tol = -1e-12
+info_dict = {}
 
 # Circuit instance
 qc = QuantumCircuit(n_qubits + 1)
 psi0 = Statevector.from_label(input_state)
+
+#%% Debug
+str_state = '10'
+state_aux = Statevector.from_label(str_state)
+qc2 = QuantumCircuit(len(str_state))
+
+def add_cx(qc0, bit_string):
+    for qubit, bit in enumerate(reversed(bit_string)):
+        if bit == "1": qc0.x(qubit)
+    return qc0
+
+
+qc2.h(range(len(str_state)))
+qc2.barrier()
+qc2 = add_cx(qc2, f'{1:0b}')
+qc2.mcx(list(range(len(str_state) - 1)), len(str_state)-1)
+qc2 = add_cx(qc2, f'{1:0b}')
+
+final_state = state_aux.evolve(qc2)
+qc2.draw(output='mpl')
+plt.show()
+
 
 #%% Algorithm evolution and information
 
@@ -74,7 +96,6 @@ plt.rc('font', family='serif')
 fig1 = qc.draw(output="mpl")
 ax1 = fig1.gca()
 ax1.set_title(f'Deutsch Algorithm with a {type_func} function')
-
 
 
 # Information lattice per iteration
