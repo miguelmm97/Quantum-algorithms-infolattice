@@ -39,28 +39,6 @@ info_dict = {}
 qc = QuantumCircuit(n_qubits + 1)
 psi0 = Statevector.from_label(input_state)
 
-#%% Debug
-str_state = '10'
-state_aux = Statevector.from_label(str_state)
-qc2 = QuantumCircuit(len(str_state))
-
-def add_cx(qc0, bit_string):
-    for qubit, bit in enumerate(reversed(bit_string)):
-        if bit == "1": qc0.x(qubit)
-    return qc0
-
-
-qc2.h(range(len(str_state)))
-qc2.barrier()
-qc2 = add_cx(qc2, f'{1:0b}')
-qc2.mcx(list(range(len(str_state) - 1)), len(str_state)-1)
-qc2 = add_cx(qc2, f'{1:0b}')
-
-final_state = state_aux.evolve(qc2)
-qc2.draw(output='mpl')
-plt.show()
-
-
 #%% Algorithm evolution and information
 
 # Step 1: Hadamard transform in the control and target qubits
