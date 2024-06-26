@@ -26,7 +26,7 @@ from functions import (deutsch_function, calc_info, plot_info_latt, calc_info_pe
 #%% Definitions and parameters
 
 # Circuit
-input_state = '000'
+input_state = '00000'
 n_qubits = len(input_state) - 1
 black_box, type_func = deutsch_function(n_qubits, return_info=True)
 
@@ -52,9 +52,25 @@ qc.compose(black_box, inplace=True)
 info_dict[1] = calc_info(psi0.evolve(qc).data)
 state = psi0.evolve(qc)
 
+# Balanced circuit:
+# def add_cx(qc, bit_string):
+#     for qubit, bit in enumerate(reversed(bit_string)):
+#         if bit == "1": qc.x(qubit)
+#     return qc
+# for i, psi in enumerate(half_states):
+#     qc.barrier()
+#     qc = add_cx(qc, f'{psi:0b}')
+#     qc.mcx(list(range(n_qubits)), n_qubits)
+#     qc = add_cx(qc, f'{psi:0b}')
+#     info_dict[1 + i] = calc_info(psi0.evolve(qc).data)
+#     state = psi0.evolve(qc)
+# qc.barrier()
+
+
 # Step 3: Invert hadamard transform on the target
 qc.h(range(n_qubits))
-info_dict[2] = calc_info(psi0.evolve(qc).data)
+# info_dict[1 + len(half_states)] = calc_info(state.evolve(qc).data)
+info_dict[2] = calc_info(state.evolve(qc).data)
 state = psi0.evolve(qc)
 
 # Debug

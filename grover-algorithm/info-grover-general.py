@@ -28,18 +28,17 @@ from functions import (calc_info, plot_info_latt, calc_info_per_scale, grover_or
 #%% Definitions and parameters
 
 # Circuit details
-marked_state_str = '1000'
-phi0_str         = '0000'
-marked_states    = [marked_state_str]
-num_qubits       = len(marked_states[0])
+phi0_str         = '0000000000'
+marked_states    = ['0000100100', '0011001100', '0101010101']
+num_qubits       = len(phi0_str)
 
 # Iteration number
-dim_H = 2 ** len(marked_state_str)
+dim_H = 2 ** num_qubits
 theta0 = 2 * np.arccos(np.sqrt((dim_H - len(marked_states)) / dim_H))
 optimal_iter1 = math.floor(math.pi / (4 * math.asin(math.sqrt(len(marked_states) / 2 ** num_qubits))))
 optimal_iter2 = 0.5 * (np.pi / theta0 - 1)
 n_iter = optimal_iter1
-final_prob = np.sin((2 * np.ceil(n_iter) + 1) * theta0 / 2)
+final_prob = np.sin((2 * n_iter + 1) * theta0 / 2)
 
 # Definitions
 info_dict = {}
@@ -61,6 +60,7 @@ if psi0.num_qubits != num_qubits:
 
 
 #%% Information lattice and information per scale
+
 # Circuit evolution: Hadamard transform
 qc.h(range(num_qubits))
 info_dict[0] = calc_info(psi0.evolve(qc).data)
@@ -71,8 +71,8 @@ for key in info_dict[0].keys():
         raise ValueError(f'Negative mutual information: step {0} | scale {key}')
 
 
+# Circuit evolution: Grover iterations and information lattice
 for i in range(1, n_iter + 1):
-    # Circuit evolution: Grover iterations and information lattice
     print(f'iter: {i} / {n_iter}')
     qc.compose(grover_op, inplace=True)
     info_dict[i] = calc_info(state.evolve(grover_op).data)
@@ -100,8 +100,22 @@ for step in range(info_per_scale.shape[0]):
     if not np.allclose(np.sum(prob_scale), 1, atol=1e-15):
         raise ValueError(f'Probability distribution is not normalised')
 
-print(len(info_per_scale))
+# Expected information and success probability
+expected_state = np.zeros((dim_H, ), dtype=np.complex128)
+success_probability = 0
+for psi in marked_states:
+    expected_state[int(psi, 2)] = 1.
+    success_probability += state.data[int(psi, 2)] ** 2
+expected_state = expected_state / np.linalg.norm(expected_state)
+expected_info = calc_info(expected_state)
+# Debug
+if np.allclose(success_probability, final_prob, atol=1e-10):
+    print(f'Theoretical probability and success probability not matching, diff: {np.abs(success_probability - final_prob)}')
+
+
+
 #%% Saving data
+
 file_list = os.listdir('../../data-grover')
 expID = get_fileID(file_list, common_name='Experiment')
 filename = '{}{}{}'.format('Experiment', expID, '.h5')
@@ -117,7 +131,7 @@ with h5py.File(filepath, 'w') as f:
 
     # Parameters folder
     parameters = f.create_group('Parameters')
-    store_my_data(parameters, 'marked_state_str', marked_state_str)
+    store_my_data(parameters, 'marked_states',    marked_states)
     store_my_data(parameters, 'num_qubits',       num_qubits)
     store_my_data(parameters, 'phi0_str',         phi0_str)
     store_my_data(parameters, 'n_iter',           n_iter)
@@ -154,7 +168,7 @@ for i in range(n_iter + 1):
             ax = fig1.add_subplot(gs[1, int((n_iter + 1) / 2) - 1])
     plot_info_latt(info_dict[i], ax)
     ax.set_title(f't: {i / optimal_iter1:.2f}')
-fig1.suptitle(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter1}')
+fig1.suptitle(f'Initial state: {phi0_str} , marked state: {marked_states},  optimal iteration: {optimal_iter1}')
 
 # Information per scale per iteration
 fig2 = plt.figure(figsize=(8, 6.5))
@@ -170,7 +184,7 @@ ax2.set_ylabel("$\log{(i_l)}$", fontsize=20)
 ax2.tick_params(which='major', width=0.75, labelsize=15)
 ax2.tick_params(which='major', length=10, labelsize=15)
 ax2.legend(loc='best', ncol=2, fontsize=10, frameon=False)
-ax2.set_title(f'Initial state: {phi0_str} , marked state: {marked_state_str},  optimal iteration: {optimal_iter1}')
+ax2.set_title(f'Initial state: {phi0_str} , marked state: {marked_states},  optimal iteration: {optimal_iter1}')
 
 
 fig3 = plt.figure(figsize=(6, 5))
@@ -182,9 +196,8 @@ qc.draw(output="mpl", style="iqp", ax=ax3_1)
 grover_op.decompose().draw(output="mpl", style="iqp", ax=ax3_2)
 
 fig4 = plt.figure(figsize=(6, 5))
-gs = GridSpec(2, 4, figure=fig4)
-ax4_1 = fig3.add_subplot(gs[:, :2])
-ax4_2 = fig3.add_subplot(gs[:, 2:])
+ax4 = fig4.gca()
+plot_info_latt(expected_info, ax4)
 
 
 

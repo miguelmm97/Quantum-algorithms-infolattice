@@ -65,6 +65,7 @@ for i, key in enumerate(data_dict.keys()):
     n_iter         = data_dict[key]['Parameters']['n_iter']
     optimal_iter   = data_dict[key]['Parameters']['opt_iter']
     marked_state   = data_dict[key]['Parameters']['marked_state_str']
+    # marked_state   = data_dict[key]['Parameters']['marked_state']
     l_rescaled = np.arange(0, num_qubits) / (num_qubits - 1)
     t_rescaled = np.arange(0, n_iter + 1) / optimal_iter
 

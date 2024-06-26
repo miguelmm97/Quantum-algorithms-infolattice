@@ -13,7 +13,7 @@ from qiskit.quantum_info.operators import Operator
 import h5py
 import os
 
-
+# Algorithm
 def grover_oracle(marked_states):
 
     if not isinstance(marked_states, list):
@@ -37,6 +37,9 @@ def grover_oracle(marked_states):
 
     return qc
 
+
+
+# Information lattice
 def reshape_psi(psi, n, l):
     '''
 
@@ -196,6 +199,25 @@ def plot_info_latt(info_latt, ax):
     ax.set_aspect('equal')
     ax.axis('off')
 
+def median(x, P):
+
+    acc_prob = 0
+    for i in range(len(x)):
+        acc_prob += P[i]
+        if acc_prob > 1/2 and i > 0:
+            if P[i] >= P[i - 1]:
+                percent = 1 - P[i - 1] / P[i]
+            else:
+                percent = P[i] / P[i - 1]
+            med = x[i-1] + percent * x[i]
+            break
+        elif acc_prob > 1/2 and i == 0:
+            med = x[0]
+
+    return med
+
+
+# Managing data
 def get_fileID(file_list, common_name='datafile'):
     expID = 0
     for file in file_list:
@@ -243,7 +265,6 @@ def load_my_data(file_list, directory):
 
     return data_dict
 
-
 def load_my_attr(file_list, directory, dataset):
     attr_dict = {}
 
@@ -259,20 +280,5 @@ def load_my_attr(file_list, directory, dataset):
 
     return attr_dict
 
-def median(x, P):
 
-    acc_prob = 0
-    for i in range(len(x)):
-        acc_prob += P[i]
-        if acc_prob > 1/2 and i > 0:
-            if P[i] >= P[i - 1]:
-                percent = 1 - P[i - 1] / P[i]
-            else:
-                percent = P[i] / P[i - 1]
-            med = x[i-1] + percent * x[i]
-            break
-        elif acc_prob > 1/2 and i == 0:
-            med = x[0]
-
-    return med
 
