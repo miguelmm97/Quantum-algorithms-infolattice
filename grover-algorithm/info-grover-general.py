@@ -19,7 +19,7 @@ from qiskit.circuit.library import GroverOperator, MCMT, ZGate, HGate
 from qiskit.quantum_info import Statevector
 from qiskit.quantum_info.operators import Operator
 
-# Information lattice
+# Information lattice and algorithm
 from functions import (calc_info, plot_info_latt, calc_info_per_scale, grover_oracle, get_fileID, store_my_data,
                        attr_my_data, median)
 
@@ -28,8 +28,8 @@ from functions import (calc_info, plot_info_latt, calc_info_per_scale, grover_or
 #%% Definitions and parameters
 
 # Circuit details
-phi0_str         = '0000000000'
-marked_states    = ['0000100100', '0011001100', '0101010101']
+phi0_str         = '0000'
+marked_states    = ['0001']
 num_qubits       = len(phi0_str)
 
 # Iteration number

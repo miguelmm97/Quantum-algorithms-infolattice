@@ -37,8 +37,6 @@ def grover_oracle(marked_states):
 
     return qc
 
-
-
 # Information lattice
 def reshape_psi(psi, n, l):
     '''
