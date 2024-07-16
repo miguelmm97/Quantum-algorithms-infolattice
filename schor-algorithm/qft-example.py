@@ -22,9 +22,10 @@ from qiskit.quantum_info.operators import Operator
 # Algorithm
 from functions import qft_circuit
 
-#%% Main
-num_qubits = 6
+#%% Main: example circuit
+num_qubits = 10
 qc = qft_circuit(num_qubits)
 fig1 = qc.draw(output="mpl", style="iqp")
 ax1 = fig1.gca()
 plt.show()
+
