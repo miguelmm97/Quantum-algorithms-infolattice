@@ -22,12 +22,12 @@ from qiskit.quantum_info.operators import Operator
 # Algorithm
 from functions import qft_circuit, Umod_multi
 
+#%% Variables
+m = int(np.ceil(np.log2(15)))   # Qubits in the second register (phase estimation)
+t = 2 * m                       # Qubits in the first register (QFT)
+
 
 #%% Main: example circuit for U(x) = 7x mod 15
-
-# Variables
-t = 5                           # Qubits in the first register (QFT)
-m = int(np.ceil(np.log2(15)))   # Qubits in the second register (phase estimation)
 
 # Create 7mod15 gate
 Umod = QuantumCircuit(m)
@@ -50,6 +50,6 @@ qft_inv.name = 'QFT$^\dagger$'
 qc_shor.append(qft_inv, range(t))
 
 # Circuit
-fig1 = qc_shor.draw(output="mpl", style="iqp")
-ax1 = fig1.gca()
+qc_shor.draw(output="mpl", style="iqp")
 plt.show()
+

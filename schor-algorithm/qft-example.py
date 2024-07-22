@@ -25,7 +25,6 @@ from functions import qft_circuit
 #%% Main: example circuit
 num_qubits = 5
 qc = qft_circuit(num_qubits)
-fig1 = qc.draw(output="mpl", style="iqp")
-ax1 = fig1.gca()
+qc.draw(output="mpl", style="iqp")
 plt.show()
 
