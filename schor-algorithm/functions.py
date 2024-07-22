@@ -30,17 +30,33 @@ def qft_circuit(num_qubits):
             circuit.h(0)
             circuit.barrier()
             for i in range(num_qubits - 1, int(np.floor(num_qubits / 2)) - 1, -1):
-                circuit.swap(i, num_qubits - i - 1)
+                if i != num_qubits - i - 1:
+                    circuit.swap(i, num_qubits - i - 1)
+                else:
+                    pass
             return circuit
-
     return circuit
 
 def qft_block(qubit, num_qubits):
     circuit = QuantumCircuit(num_qubits)
     circuit.h(qubit)
+    # Repeated controlled phase gates on all remaining qubits
     for target in range(qubit - 1, -1, - 1):
         circuit.cp(pi / 2 ** (qubit - target), target, qubit)
     return circuit
+
+def Umod_multi(num_qubits, power, U, name='U'):
+
+    # Apply U repeated times
+    circ = QuantumCircuit(num_qubits)
+    for _ in range(2 ** power):
+        circ.append(U, range(num_qubits))
+
+    # Create gate out of the circuit
+    U_multi = circ.to_gate()
+    U_multi.name = f'${name}(2^{power})$'
+    cU_multi = U_multi.control()
+    return cU_multi
 
 
 # Information lattice

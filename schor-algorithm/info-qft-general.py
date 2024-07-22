@@ -23,8 +23,8 @@ from qiskit.quantum_info.operators import Operator
 from functions import qft_block, calc_info, plot_info_latt, calc_info_per_scale
 
 #%% Main
-num_qubits = 6
-state = Statevector.from_label('101010')
+num_qubits = 4
+state = Statevector.from_label('1000')
 qc = QuantumCircuit(num_qubits)
 qc_plot = QuantumCircuit(num_qubits)
 info_dict = {}
@@ -54,6 +54,7 @@ for n in range(num_qubits - 1, -1, -1):
 
         for i in range(num_qubits - 1, int(np.floor(num_qubits / 2)) - 1, -1):
             # Information lattice
+            print(int(np.floor(num_qubits / 2)))
             qc = QuantumCircuit(num_qubits)
             qc.swap(i, num_qubits - i - 1)
             state = state.evolve(qc)
