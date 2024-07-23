@@ -24,12 +24,11 @@ from functions import qft_circuit, Umod_multi,  calc_info, plot_info_latt, calc_
 
 #%% Variables
 # Variables
-m = int(np.ceil(np.log2(15)))   # Qubits in the second register (phase estimation)
-t = 3                           # Qubits in the first register (QFT)
-n_iter = t + 1                  # Number of information measurements
-register1_0 = '0' * t           # First register initial state
-register2_0 = '1' * m           # Second register initial state
-state = Statevector.from_label(register1_0 + register2_0) # Initial state
+m = int(np.ceil(np.log2(15)))           # Qubits in the second register (phase estimation)
+t = 3                                   # Qubits in the first register (QFT)
+n_iter = t + 1                          # Number of information measurements
+psi0 = '0' * (t + m)                    # Initial state
+state = Statevector.from_label(psi0)    # Initial state
 info_dict = {}
 title_dict = {}
 
@@ -46,7 +45,7 @@ Umod = Umod.to_gate()
 # Repeated application of the powers of the U operator
 qc_shor = QuantumCircuit(t + m, t)
 qc_shor.h(range(t))
-qc_shor.x(t)
+qc_shor.x(range(t, t + m))
 state = state.evolve(qc_shor)
 info_dict[0] = calc_info(state.data)
 title_dict[0] = 'H + X'

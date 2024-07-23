@@ -24,7 +24,7 @@ from functions import qft_block, calc_info, plot_info_latt, calc_info_per_scale
 
 #%% Variables
 num_qubits = 4                                            # Number of qubits
-state = Statevector.from_label('1000')                    # Initial state
+state = Statevector.from_label('1011')                    # Initial state
 n_iter = num_qubits - 1 + int(np.floor(num_qubits / 2))   # Number of information measurements
 info_dict = {}
 title_dict = {}
