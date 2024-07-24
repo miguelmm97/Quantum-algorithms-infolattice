@@ -37,6 +37,26 @@ def qft_circuit(num_qubits):
             return circuit
     return circuit
 
+def qft_gate(num_qubits):
+    circuit = QuantumCircuit(num_qubits)
+    for n in range(num_qubits - 1, -1, -1):
+
+        # Series of H and controlled phase gates on every qubit
+        if n != 0:
+            circuit.compose(qft_block(n, num_qubits), inplace=True)
+
+        # H on the last qubit and swap operations
+        else:
+            circuit.h(0)
+            for i in range(num_qubits - 1, int(np.floor(num_qubits / 2)) - 1, -1):
+                if i != num_qubits - i - 1:
+                    circuit.swap(i, num_qubits - i - 1)
+                else:
+                    pass
+            return circuit.to_gate()
+    return circuit.to_gate()
+
+
 def qft_block(qubit, num_qubits):
     circuit = QuantumCircuit(num_qubits)
     circuit.h(qubit)

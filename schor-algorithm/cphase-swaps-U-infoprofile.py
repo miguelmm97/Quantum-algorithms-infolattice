@@ -20,7 +20,7 @@ from qiskit.quantum_info import Statevector
 from qiskit.quantum_info.operators import Operator
 
 # Algorithm and information lattice
-from functions import Umod_multi, qft_circuit, calc_info, plot_info_latt, calc_info_per_scale
+from functions import Umod_multi, qft_circuit, qft_gate, calc_info, plot_info_latt, calc_info_per_scale
 
 # Figure settings
 font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 22, }
@@ -48,30 +48,17 @@ psi = psi0.evolve(qc_cphase2)
 info_latt_cphase2 = calc_info(psi.data)
 
 
-# Full QFT with superposition
-qc_QFT = QuantumCircuit(4)
-qc_QFT.h(range(4))
-qft = qft_circuit(4)
-qc_QFT = qc_QFT.append(qft, range(4))
-# psi0 = Statevector.from_label('0000')
-# psi = psi0.evolve(qc_QFT)
-# info_latt_QFT = calc_info(psi.data)
-
 # Figure
 fig1 = plt.figure(figsize=(6, 3))
-gs = GridSpec(3, 2, figure=fig1)
+gs = GridSpec(2, 2, figure=fig1)
 ax1 = fig1.add_subplot(gs[0, 0])
 ax2 = fig1.add_subplot(gs[0, 1])
 ax3 = fig1.add_subplot(gs[1, 0])
 ax4 = fig1.add_subplot(gs[1, 1])
-ax5 = fig1.add_subplot(gs[2, 0])
-ax6 = fig1.add_subplot(gs[2, 1])
 qc_cphase.draw(output="mpl", style="iqp", ax=ax1)
 plot_info_latt(info_latt_cphase, ax=ax2)
 qc_cphase2.draw(output="mpl", style="iqp", ax=ax3)
 plot_info_latt(info_latt_cphase2, ax=ax4)
-qc_QFT.draw(output="mpl", style="iqp", ax=ax5)
-# plot_info_latt(info_latt_QFT, ax=ax6)
 fig1.suptitle('Information profile of c-phase gates used for the QFT')
 
 
@@ -84,6 +71,7 @@ qc_swap1.swap(0, 1)
 psi0 = Statevector.from_label('00')
 psi = psi0.evolve(qc_swap1)
 info_latt_swap1 = calc_info(psi.data)
+
 
 # Swap gate with entangled qubits
 qc_swap2 = QuantumCircuit(2)
@@ -99,6 +87,7 @@ qc_swap2.swap(0, 1)
 psi = psi0.evolve(qc_swap2)
 info_latt_swap2_2 = calc_info(psi.data)
 qc_swap2.barrier()
+
 
 # Swap gate with many entangled qubits
 qc_swap3 = QuantumCircuit(4)
@@ -193,4 +182,67 @@ plot_info_latt(info_latt_Umod2, ax=ax4)
 qc_Umod3.draw(output="mpl", style="iqp", ax=ax5)
 plot_info_latt(info_latt_Umod3, ax=ax6)
 fig3.suptitle('Information profile of c-U gates used in Shors algorithm')
+
+
+
+#%% Main: QFT with different input states
+
+# Full QFT with a particular superposition
+qc_QFT = QuantumCircuit(4)
+qc_QFT.h(range(3))
+qft = qft_gate(4)
+qft.name = 'QFT'
+qc_QFT = qc_QFT.compose(qft, range(4))
+psi0 = Statevector.from_label('0000')
+psi = psi0.evolve(qc_QFT)
+info_latt_QFT = calc_info(psi.data)
+
+# Full QFT with a particular superposition
+qc_QFT2 = QuantumCircuit(4)
+qc_QFT2.h(range(2))
+qft = qft_gate(4)
+qft.name = 'QFT'
+qc_QFT2 = qc_QFT2.compose(qft, range(4))
+psi0 = Statevector.from_label('0000')
+psi = psi0.evolve(qc_QFT2)
+info_latt_QFT2 = calc_info(psi.data)
+
+# Full QFT with entanglement
+qc_QFT3 = QuantumCircuit(4)
+qc_QFT3.h(1)
+qc_QFT3.cx(1, 2)
+psi0 = Statevector.from_label('0000')
+psi = psi0.evolve(qc_QFT3)
+info_latt_QFT3_1 = calc_info(psi.data)
+qc_QFT3.barrier()
+
+qft = qft_gate(4)
+qft.name = 'QFT'
+qc_QFT3 = qc_QFT3.compose(qft, range(4))
+psi = psi0.evolve(qc_QFT3)
+info_latt_QFT3_2 = calc_info(psi.data)
+qc_QFT3.barrier()
+
+
+
+
+
+# Figure
+fig4 = plt.figure(figsize=(8, 6))
+gs = GridSpec(3, 4, figure=fig4)
+ax1 = fig4.add_subplot(gs[0, 0:2])
+ax2 = fig4.add_subplot(gs[0, 2:])
+ax3 = fig4.add_subplot(gs[1, 0:2])
+ax4 = fig4.add_subplot(gs[1, 2:])
+ax5 = fig4.add_subplot(gs[2, 0:2])
+ax6 = fig4.add_subplot(gs[2, 2])
+ax7 = fig4.add_subplot(gs[2, 3])
+qc_QFT.draw(output="mpl", style="iqp", ax=ax1)
+plot_info_latt(info_latt_QFT, ax=ax2)
+qc_QFT2.draw(output="mpl", style="iqp", ax=ax3)
+plot_info_latt(info_latt_QFT2, ax=ax4)
+qc_QFT3.draw(output="mpl", style="iqp", ax=ax5)
+plot_info_latt(info_latt_QFT3_1, ax=ax6)
+plot_info_latt(info_latt_QFT3_2, ax=ax7)
+fig4.suptitle('Information profile of c-phase gates used for the QFT')
 plt.show()

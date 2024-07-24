@@ -15,7 +15,7 @@ import os
 
 
 # Algorithms
-def deutsch_function(num_qubits, return_info=False):
+def deutsch_function(num_qubits):
     """
     Returns a Deutsch-Joza function circuit implementation that with 50% chance is constant or balanced.
     """
@@ -30,7 +30,7 @@ def deutsch_function(num_qubits, return_info=False):
     # Return constant circuit with 1/2 probability: All 1s if target is flipped or 0s otherwise
     if np.random.randint(0, 2):
         info = 'constant'
-        return qc, info if return_info else qc
+        return qc, info
 
     # Balanced circuit: 1) Choose half of the states in H
     half_states = np.random.choice(range(2 ** num_qubits), (2 ** num_qubits) // 2,  replace=False)
@@ -50,7 +50,7 @@ def deutsch_function(num_qubits, return_info=False):
 
     qc.barrier()
 
-    return qc, info if return_info else qc
+    return qc, info
 
 # Information lattice
 def reshape_psi(psi, n, l):
