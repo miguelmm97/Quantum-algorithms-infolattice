@@ -23,7 +23,7 @@ from qiskit.quantum_info.operators import Operator
 from functions import qft_circuit
 
 #%% Main: example circuit
-num_qubits = 5
+num_qubits = 4
 qc = qft_circuit(num_qubits)
 qc.draw(output="mpl", style="iqp")
 plt.show()
