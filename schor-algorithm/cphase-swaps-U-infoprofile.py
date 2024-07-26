@@ -60,7 +60,7 @@ plot_info_latt(info_latt_cphase, ax=ax2)
 qc_cphase2.draw(output="mpl", style="iqp", ax=ax3)
 plot_info_latt(info_latt_cphase2, ax=ax4)
 fig1.suptitle('Information profile of c-phase gates used for the QFT')
-
+fig1.savefig('cphase.pdf', format='pdf', backend='pgf')
 
 #%% Main: SWAP gates
 
@@ -244,5 +244,6 @@ plot_info_latt(info_latt_QFT2, ax=ax4)
 qc_QFT3.draw(output="mpl", style="iqp", ax=ax5)
 plot_info_latt(info_latt_QFT3_1, ax=ax6)
 plot_info_latt(info_latt_QFT3_2, ax=ax7)
-fig4.suptitle('Information profile of c-phase gates used for the QFT')
+# fig4.suptitle('Information profile of c-phase gates used for the QFT')
+fig4.savefig('qft-info.pdf', format='pdf', backend='pgf')
 plt.show()

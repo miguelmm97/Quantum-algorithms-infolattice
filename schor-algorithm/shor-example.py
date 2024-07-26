@@ -24,7 +24,7 @@ from functions import qft_circuit, Umod_multi
 
 #%% Variables
 m = int(np.ceil(np.log2(15)))   # Qubits in the second register (phase estimation)
-t = 2 * m                       # Qubits in the first register (QFT)
+t = 4                       # Qubits in the first register (QFT)
 
 
 #%% Main: example circuit for U(x) = 7x mod 15
@@ -50,6 +50,7 @@ qft_inv.name = 'QFT$^\dagger$'
 qc_shor.append(qft_inv, range(t))
 
 # Circuit
-qc_shor.draw(output="mpl", style="iqp")
+fig1 = qc_shor.draw(output="mpl", style="iqp")
+fig1.savefig('shor.pdf', format='pdf', backend='pgf')
 plt.show()
 

@@ -194,6 +194,7 @@ ax3_2 = fig3.add_subplot(gs[:, 2:])
 
 qc.draw(output="mpl", style="iqp", ax=ax3_1)
 grover_op.decompose().draw(output="mpl", style="iqp", ax=ax3_2)
+fig3.tight_layout()
 
 fig4 = plt.figure(figsize=(6, 5))
 ax4 = fig4.gca()
@@ -207,7 +208,7 @@ plot_info_latt(expected_info, ax4)
 plt.show()
 # fig1.savefig(f'{expID}-info-lattice.pdf', format='pdf', backend='pgf')
 # fig2.savefig(f'{expID}-info-scale.pdf', format='pdf', backend='pgf')
-# fig3.savefig(f'{expID}-iteration.pdf', format='pdf', backend='pgf')
-# fig4.savefig(f'{expID}-algorithm.pdf', format='pdf', backend='pgf', bbox_inches='tight')
+fig3.savefig(f'grover.pdf', format='pdf', backend='pgf')
+#fig4.savefig(f'{expID}-algorithm.pdf', format='pdf', backend='pgf', bbox_inches='tight')
 
 

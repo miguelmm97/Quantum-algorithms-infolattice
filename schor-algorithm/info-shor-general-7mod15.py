@@ -80,6 +80,7 @@ plt.rc('font', family='serif')
 fig1 = qc_shor.draw(output="mpl", style="iqp")
 
 fig2 = U.draw(output="mpl", style="iqp")
+fig2.savefig(f'7mod15gate.pdf', format='pdf', backend='pgf')
 
 fig3 = plt.figure(figsize=(8, 5))
 gs = GridSpec(2, int(np.ceil(n_iter / 2) + 1), figure=fig3)

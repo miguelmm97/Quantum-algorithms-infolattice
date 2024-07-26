@@ -25,6 +25,9 @@ from functions import qft_circuit
 #%% Main: example circuit
 num_qubits = 4
 qc = qft_circuit(num_qubits)
-qc.draw(output="mpl", style="iqp")
+fig1 = qc.draw(output="mpl", style="iqp")
+
+
+fig1.savefig('qft.pdf', format='pdf', backend='pgf')
 plt.show()
 
