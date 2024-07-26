@@ -131,7 +131,7 @@ fig2.suptitle('Information profile of SWAP gates')
 
 #%% Main: U-gates applied in Shor's algorithm
 m = int(np.ceil(np.log2(15)))   # Qubits in the second register (phase estimation)
-t = 3                           # Qubits in the first register (QFT)
+t = 1                          # Qubits in the first register (QFT)
 psi0 = '0' * (t + m)
 psi0 = Statevector.from_label(psi0)
 
@@ -144,14 +144,14 @@ Umod = Umod.to_gate()
 
 # Umod gate without superposition
 qc_Umod = QuantumCircuit(m + t)
-qc_Umod.x(range(t, t + m))
+qc_Umod.x(t)
 qc_Umod.append(Umod_multi(m, 0, Umod), [0] + list(range(t, t + m)))
 psi = psi0.evolve(qc_Umod)
 info_latt_Umod = calc_info(psi.data)
 
 # Umod gate with superposition
 qc_Umod2 = QuantumCircuit(m + t)
-qc_Umod2.x(range(t, t + m))
+qc_Umod2.x(t)
 qc_Umod2.h(range(t))
 qc_Umod2.append(Umod_multi(m, 0, Umod), [0] + list(range(t, t + m)))
 psi = psi0.evolve(qc_Umod2)
@@ -159,7 +159,7 @@ info_latt_Umod2 = calc_info(psi.data)
 
 # Higher powers of Umod gate
 qc_Umod3 = QuantumCircuit(m + t)
-qc_Umod3.x(range(t, t + m))
+qc_Umod3.x(t)
 qc_Umod3.h(range(t))
 qc_Umod3.append(Umod_multi(m, 1, Umod), [0] + list(range(t, t + m)))
 psi = psi0.evolve(qc_Umod3)

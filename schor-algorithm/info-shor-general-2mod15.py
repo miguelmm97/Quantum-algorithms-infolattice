@@ -44,7 +44,7 @@ psi_try = Statevector.from_label('0010').evolve(U)
 # Repeated application of the powers of the U operator
 qc_shor = QuantumCircuit(t + m, t)
 qc_shor.h(range(t))
-qc_shor.x(range(t, t + m))
+qc_shor.x(t)
 state = state.evolve(qc_shor)
 info_dict[0] = calc_info(state.data)
 title_dict[0] = 'H + X'
