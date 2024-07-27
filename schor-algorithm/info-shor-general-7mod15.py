@@ -83,22 +83,25 @@ fig2 = U.draw(output="mpl", style="iqp")
 fig2.savefig(f'7mod15gate.pdf', format='pdf', backend='pgf')
 
 fig3 = plt.figure(figsize=(8, 5))
-gs = GridSpec(2, int(np.ceil(n_iter / 2) + 1), figure=fig3)
+gs = GridSpec(1, n_iter, figure=fig3)
 for i in range(n_iter):
-    if ((n_iter + 1) % 2) == 0:
-        if i < int((n_iter + 1)/ 2):
-            ax = fig3.add_subplot(gs[0, i])
-        else:
-            ax = fig3.add_subplot(gs[1, i % int((n_iter + 1) / 2)])
-    else:
-        if i <= int((n_iter + 1) / 2):
-            ax = fig3.add_subplot(gs[0, i])
-        elif i != (n_iter + 1) - 1:
-            ax = fig3.add_subplot(gs[1, (i % int((n_iter + 1) / 2)) - 1])
-        else:
-            ax = fig3.add_subplot(gs[1, int((n_iter + 1) / 2) - 1])
+    ax = fig3.add_subplot(gs[0, i])
     plot_info_latt(info_dict[i], ax)
     ax.set_title(title_dict[i])
+fig3.savefig(f'7mod15-info.pdf', format='pdf', backend='pgf')
+
+
+U2 = QuantumCircuit(m)
+U2.swap(3, 2)
+U2.swap(2, 1)
+U2.swap(1, 0)
+fig4 = plt.figure(figsize=(8, 5))
+gs = GridSpec(1, 2, figure=fig4)
+ax1 = fig4.add_subplot(gs[0, 0])
+ax2 = fig4.add_subplot(gs[0, 1])
+U.draw(output="mpl", style="iqp", ax=ax1)
+U2.draw(output="mpl", style="iqp", ax=ax2)
+fig4.savefig(f'mod.gates.pdf', format='pdf', backend='pgf')
 plt.show()
 
 
