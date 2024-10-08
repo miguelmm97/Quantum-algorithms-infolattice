@@ -9,6 +9,7 @@ import numpy as np
 from scipy.linalg import eigvalsh as scipy_eigvalsh
 from numpy.linalg import eigvalsh as numpy_eigvalsh
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def reshape_psi(psi, n, l):
@@ -243,11 +244,15 @@ def calc_info_per_scale(info_latt, bc='periodic'):
 
 def plot_info_latt(info_latt, ax):
     color_map = plt.get_cmap("Oranges")
+    colors = color_map(np.linspace(0, 1, 20))
+    colors[0] = [1, 1, 1, 1]
+    color_map = LinearSegmentedColormap.from_list("custom_colormap", colors)
+
     L = max(info_latt.keys())
     r = 1/(4*L)
     for l in info_latt:
         for x in range(len(info_latt[l])):
-            ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, color=color_map(info_latt[l][x])))
+            ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, facecolor=color_map(info_latt[l][x]), edgecolor='black', linewidth=0.2))
     ax.set_xlim([-2*r,1])
     ax.set_ylim([-2*r,1+2*r])
     ax.set_aspect('equal')
