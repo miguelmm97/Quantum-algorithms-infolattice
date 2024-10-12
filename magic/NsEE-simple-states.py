@@ -37,3 +37,13 @@ ax1 = fig1.add_subplot(gs[0, 0])
 plot_info_latt(info_latt, ax1)
 qc.draw(output="mpl", style="iqp")
 plt.show()
+
+
+# clifford_undo = QuantumCircuit(2)
+# clifford_undo.h(0)
+# clifford_undo.cx(0, 1)
+psi_try = psi1.evolve(clifford_sequence.inverse())
+info_latt_try = calc_info(psi_try.data)
+#
+# print('Info per scale |psi>:', calc_info_per_scale(info_dict[i], bc='open'))
+# print('Info per scale C|psi>:', calc_info_per_scale(info_latt_try, bc='open'))

@@ -15,10 +15,10 @@ from qiskit.quantum_info.operators import Operator
 # Information lattice
 from InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
 from functions  import random_clifford_circuit
-#%% Evolving quantum states through the circuit
+#%% Parameters
 
 # Initial state
-psi0_label = '0' * 4
+psi0_label = '0' * 3
 n_qubits = len(psi0_label)
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
@@ -26,67 +26,83 @@ psi2 = Statevector.from_label(psi0_label)
 # Circuit parameters
 Nlayers = 30
 depth = 20
-seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))     #[44,55,22,33,99,9,78,654,321,234,543,1,4,8,45,26,45,90,777,555,21,12]
+seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
+qubits = list(range(n_qubits))
+T_per_layer = 2
+max_layer = 10
 
+# Preallocation
 info_dict = {}
-info_dict_Ns = {}
+info_dict_clifford = {}
+
+
+#%% Circuit
 
 clifford_sequence = QuantumCircuit(n_qubits)
 for i in range(Nlayers):
+
     # Generate Clifford layer
     layer = QuantumCircuit(n_qubits)
     clifford = random_clifford_circuit(num_qubits=n_qubits, depth=depth, seed=seed_list[i])
-    layer.compose(clifford, inplace=True)
     clifford_sequence.compose(clifford, inplace=True)
+    layer.compose(clifford, inplace=True)
 
-    # Randomly apply T gates
+    # Application of T gates
     rng = np.random.default_rng(seed_list[i])
-    qubits = list(range(n_qubits))
     rng.shuffle(qubits)
-    operands = qubits[-2:]
-    if i < int(Nlayers / 4):
-        layer.t(operands[0])
-    # layer.t(operands[1])
-    # layer.r(np.pi/3, np.pi/7, operands[0])
-    # layer.r(np.pi/3, np.pi/7, operands[1])
-    # if i == 0:
-    #     layer.t(0)
+    operands = qubits[-T_per_layer:]
+    if i < max_layer:
+        for qubit in operands:
+            layer.t(qubit)
 
     # Information lattice
     psi1 = psi1.evolve(layer)
-    psi2 = psi2.evolve(clifford_sequence)
+    psi2 = psi2.evolve(clifford)
     info_dict[i] = calc_info(psi1.data)
-    info_dict_Ns[i] = calc_info(psi2.data)
+    info_dict_clifford[i] = calc_info(psi2.data)
     print(f'Layer: {i}, Info per scale |psi>:', calc_info_per_scale(info_dict[i], bc='open'))
 
 
-    # clifford_sequence.draw(output="mpl", style="iqp")
-    # clifford_sequence.inverse().draw(output="mpl", style="iqp")
-    # plt.show()
 
-# clifford_undo = QuantumCircuit(2)
-# clifford_undo.h(0)
-# clifford_undo.cx(0, 1)
-psi_try = psi1.evolve(clifford_sequence.inverse())
-info_latt_try = calc_info(psi_try.data)
-#
-# print('Info per scale |psi>:', calc_info_per_scale(info_dict[i], bc='open'))
-# print('Info per scale C|psi>:', calc_info_per_scale(info_latt_try, bc='open'))
+#%% Figures
+font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 22, }
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
+color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
 
 
-fig1 = plt.figure()
-gs = GridSpec(2, Nlayers, figure=fig1)
+Nrows = int(Nlayers / 10) + 1
+Ncol = 10
+fig1 = plt.figure(figsize=(20, 10))
+fig1.suptitle('$\mathcal{U}\\vert \psi \\rangle$ with $\mathcal{U}=\langle H, S, CNOT, T\\rangle$', fontsize=20)
+gs = GridSpec(Nrows, Ncol, figure=fig1, hspace=0, wspace=0.1)
 for i in range(Nlayers):
-    ax1 = fig1.add_subplot(gs[0, i])
-    ax2 = fig1.add_subplot(gs[1, i])
-    plot_info_latt(info_dict[i], ax1)
-    plot_info_latt(info_dict_Ns[i], ax2)
+    # Position in the grid
+    row = i // Ncol
+    col = i % Ncol
+    ax = fig1.add_subplot(gs[row, col])
+    # Plots
+    plot_info_latt(info_dict[i], ax)
+    if i < max_layer:
+        ax.set_title(f'$n_l$: {i}, ' + '$T+\mathcal{C}$')
+    else:
+        ax.set_title(f'$n_l$: {i}, ' + '$\mathcal{C}$')
 
-fig2 = plt.figure()
-ax = fig2.gca()
-plot_info_latt(info_latt_try, ax)
 
+fig2 = plt.figure(figsize=(20, 10))
+fig2.suptitle('$\mathcal{U}\\vert \psi \\rangle$ with $\mathcal{U}=\langle H, S, CNOT\\rangle$', fontsize=20)
+gs = GridSpec(Nrows, Ncol, figure=fig2, hspace=0, wspace=0.1)
+for i in range(Nlayers):
+    # Position in the grid
+    row = i // Ncol
+    col = i % Ncol
+    ax = fig2.add_subplot(gs[row, col])
+    # Plots
+    plot_info_latt(info_dict_clifford[i], ax)
+    ax.set_title(f'$n_l$: {i}, ' + '$\mathcal{C}$')
+
+
+# clifford_sequence.draw(output="mpl", style="iqp")
+# clifford_sequence.inverse().draw(output="mpl", style="iqp")
 plt.show()
-
-
-
