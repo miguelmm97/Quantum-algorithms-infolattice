@@ -9,7 +9,8 @@ import numpy as np
 from scipy.linalg import eigvalsh as scipy_eigvalsh
 from numpy.linalg import eigvalsh as numpy_eigvalsh
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib import colorbar
 
 
 def reshape_psi(psi, n, l):
@@ -242,21 +243,29 @@ def calc_info_per_scale(info_latt, bc='periodic'):
     return info_per_scale
 
 
-def plot_info_latt(info_latt, ax):
-    color_map = plt.get_cmap("Oranges")
-    colors = color_map(np.linspace(0, 1, 20))
-    colors[0] = [1, 1, 1, 1]
-    color_map = LinearSegmentedColormap.from_list("custom_colormap", colors)
+def plot_info_latt(info_latt, ax, color_map, max_value=2., indicate_ints=False, tol_ints=1e-14):
 
+    # Color normalisation
+    norm = Normalize(vmin=0., vmax=max_value)
+
+    # Plot
     L = max(info_latt.keys())
     r = 1/(4*L)
     for l in info_latt:
         for x in range(len(info_latt[l])):
-            ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, facecolor=color_map(info_latt[l][x]), edgecolor='black', linewidth=0.2))
+            value = info_latt[l][x]
+            if indicate_ints and np.allclose(value, round(value), atol=tol_ints) and round(value) != 0:
+                linewidth = 1
+                edgecolor='black'
+            else:
+                linewidth = 0.2
+                edgecolor = 'black'
+            ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, facecolor=color_map(norm(value)), edgecolor=edgecolor, linewidth=linewidth))
     ax.set_xlim([-2*r,1])
     ax.set_ylim([-2*r,1+2*r])
     ax.set_aspect('equal')
     ax.axis('off')
+
 
 
 def singlet(L):
