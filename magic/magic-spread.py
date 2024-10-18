@@ -11,16 +11,17 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # Imports from Qiskit
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector
+from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
 
 
 # Information lattice
 from InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
 from functions import random_clifford_circuit
+from functions import stabiliser_Renyi_entropy_pure, stabiliser_Renyi_entropy_mixed
 #%% Parameters
 
 # Initial state
-psi0_label = '0' * 6
+psi0_label = '0' * 2
 n_qubits = len(psi0_label)
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
@@ -31,14 +32,17 @@ Nlayers = 20
 depth = 10
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
-T_per_layer = 3
+T_per_layer = 1
 max_layer = 1
 
 
 # Preallocation
 info_dict = {}
 info_dict_clifford = {}
-
+SRE_clifford = np.zeros((Nlayers, ))
+SRE_long_clifford = np.zeros((Nlayers, ))
+SRE = np.zeros((Nlayers, ))
+SRE_long = np.zeros((Nlayers, ))
 
 #%% Circuit
 
@@ -64,6 +68,27 @@ for i in range(Nlayers):
     psi2 = psi2.evolve(clifford)
     info_dict[i] = calc_info(psi1.data)
     info_dict_clifford[i] = calc_info(psi2.data)
+
+    # Stabiliser Renyi entropies
+    rho_clifford = DensityMatrix(psi2)
+    rho_clifford_A = partial_trace(rho_clifford, [0])
+    rho_clifford_B = partial_trace(rho_clifford, [1])
+    SRE_clifford_AB = stabiliser_Renyi_entropy_mixed(rho_clifford, n_qubits)
+    SRE_clifford_A = stabiliser_Renyi_entropy_mixed(rho_clifford_A, n_qubits - 1)
+    SRE_clifford_B = stabiliser_Renyi_entropy_mixed(rho_clifford_B, n_qubits - 1)
+    SRE_clifford[i] = stabiliser_Renyi_entropy_pure(psi2, 2, n_qubits)
+    SRE_long_clifford[i] = SRE_clifford_AB - SRE_clifford_A - SRE_clifford_B
+
+    rho = DensityMatrix(psi1)
+    rho_A = partial_trace(rho, [0])
+    rho_B = partial_trace(rho, [1])
+    SRE_AB = stabiliser_Renyi_entropy_mixed(rho, n_qubits)
+    SRE_A = stabiliser_Renyi_entropy_mixed(rho_A, n_qubits - 1)
+    SRE_B = stabiliser_Renyi_entropy_mixed(rho_B, n_qubits - 1)
+    SRE[i] = stabiliser_Renyi_entropy_pure(psi1, 2, n_qubits)
+    SRE_long[i] = SRE_AB - SRE_A - SRE_B
+
+
     # print(f'Layer: {i}, Info per scale |psi>:', calc_info_per_scale(info_dict[i], bc='open'))
 
 
@@ -105,9 +130,11 @@ for i in range(Nlayers):
     # Plots
     plot_info_latt(info_dict[i], ax, color_map, max_value=max_value, indicate_ints=True)
     if i < max_layer:
-        ax.set_title(f'$n_l$: {i}, ' + '$T+\mathcal{C}$')
+        # ax.set_title(f'$n_l$: {i}, ' + '$T+\mathcal{C}$')
+        ax.set_title(f'SRE: {SRE[i] :.2f} \n, SRE_LR: {SRE_long[i] :.2f}')
     else:
-        ax.set_title(f'$n_l$: {i}, ' + '$\mathcal{C}$')
+        # ax.set_title(f'$n_l$: {i}, ' + '$\mathcal{C}$')
+        ax.set_title(f'SRE: {SRE[i] :.2f} \n, SRE_LR: {SRE_long[i] :.2f}')
 
 # Fig 1: Colorbar
 cbar_ax = fig1.add_subplot(gs[1, -1])
@@ -129,7 +156,8 @@ for i in range(Nlayers):
     ax = fig2.add_subplot(gs[row, col])
     # Plots
     plot_info_latt(info_dict_clifford[i], ax, color_map, max_value=max_value, indicate_ints=True)
-    ax.set_title(f'$n_l$: {i}, ' + '$\mathcal{C}$')
+    # ax.set_title(f'$n_l$: {i}, ' + '$\mathcal{C}$')
+    ax.set_title(f'SRE: {SRE_clifford[i] :.2f}\n, SRE_LR: {SRE_long_clifford[i] :.2f}')
 
 # Fig 2: Colorbar
 cbar_ax = fig2.add_subplot(gs[1, -1])

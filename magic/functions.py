@@ -1,8 +1,10 @@
 import numpy as np
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from qiskit.circuit import Reset
+from qiskit.quantum_info import Pauli
 from qiskit.circuit.library.standard_gates import HGate, SGate, TGate, CXGate
 from qiskit.circuit.exceptions import CircuitError
+from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
+from itertools import combinations_with_replacement, product
 
 
 
@@ -89,6 +91,42 @@ def random_clifford_circuit(num_qubits, depth, max_operands=2, seed=None):
     return qc
 
 
+def stabiliser_Renyi_entropy_pure(state, n, num_qubits):
+
+    # Pauli strings
+    pauli_strings = []
+    pauli_iter = product('IXYZ', repeat=num_qubits)
+    for element in pauli_iter:
+        pauli_strings.append(''.join(element))
+
+    # Probability distribution
+    rho = DensityMatrix(state).data
+    prob_dist = np.zeros((len(pauli_strings), ))
+    for i, pauli_string in enumerate(pauli_strings):
+        P = Pauli(pauli_string).to_matrix()
+        prob_dist[i] = (np.abs(np.trace(rho @ P)) ** 2) / (2 ** num_qubits)
+
+    # Renyi entropy
+    Mn_rho = (1 / (1 - n)) * np.log(np.sum(prob_dist ** n)) - np.log(2 ** num_qubits)
+    return Mn_rho
+
+def stabiliser_Renyi_entropy_mixed(rho, num_qubits):
+
+    # Pauli strings
+    pauli_strings = []
+    pauli_iter = product('IXYZ', repeat=num_qubits)
+    for element in pauli_iter:
+        pauli_strings.append(''.join(element))
+
+    # Probability distribution
+    Tr_rhoP = np.zeros((len(pauli_strings),))
+    for i, pauli_string in enumerate(pauli_strings):
+        P = Pauli(pauli_string).to_matrix()
+        Tr_rhoP[i] = np.abs(np.trace(rho @ P))
+
+    # Renyi entropy
+    M2_rho = - np.log(np.sum(Tr_rhoP ** 4) / np.sum(Tr_rhoP ** 2))
+    return M2_rho
 
 
 def kron_iter(L, up_position=0):
@@ -129,7 +167,6 @@ def random_wn_state(n, k):
 
 def spinup():
     return np.array([1, 0])
-
 
 def spindown():
     return np.array([0, 1])
