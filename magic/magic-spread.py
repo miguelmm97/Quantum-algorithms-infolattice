@@ -20,18 +20,20 @@ from functions import random_clifford_circuit
 #%% Parameters
 
 # Initial state
-psi0_label = '0' * 10
+psi0_label = '0' * 6
 n_qubits = len(psi0_label)
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
 
+
 # Circuit parameters
-Nlayers = 30
+Nlayers = 20
 depth = 10
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
-T_per_layer = 2
+T_per_layer = 3
 max_layer = 1
+
 
 # Preallocation
 info_dict = {}

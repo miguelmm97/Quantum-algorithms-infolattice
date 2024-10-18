@@ -91,6 +91,49 @@ def random_clifford_circuit(num_qubits, depth, max_operands=2, seed=None):
 
 
 
+def kron_iter(L, up_position=0):
+    """ Given a position returns |00...1...000...> in that position."""
+    if L == 1:
+        if up_position == L-1:
+            return spinup()
+        else:
+            return spindown()
+    else:
+        if up_position == L-1:
+            return np.kron(kron_iter(L - 1, up_position), spinup())
+        else:
+            return np.kron(kron_iter(L - 1, up_position), spindown())
+
+def w_state_n(n):
+    """ Creates a W-state of order n: |100...> + |010...> + ... """
+    state = np.zeros(2**n, dtype=float)
+    for i in range(n):
+        state += kron_iter(n, i)
+    state /= np.sqrt(n)
+    return state
+
+def wn_in_chain(L, n):
+    """ The first n elements of this chain are W-like entangled."""
+    assert L >= n
+    if L == n:
+        return w_state_n(n)
+    else:
+        return np.kron(wn_in_chain(L - 1, n), spindown())
+
+def random_wn_state(n, k):
+    order = np.random.default_rng().permutation(n)
+    L = len(order)
+    psi = wn_in_chain(L, k)
+    psi = np.transpose(np.reshape(psi, [2] * L), axes=np.argsort(order))
+    return psi.flatten()
+
+def spinup():
+    return np.array([1, 0])
+
+
+def spindown():
+    return np.array([0, 1])
+
 
 
 
