@@ -1,21 +1,17 @@
 #%% Imports
 
 # Built-in modules
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib import cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # Imports from Qiskit
-from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector
 
 # Information lattice
-from InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
-from functions import random_wn_state
+from InfoLattice import calc_info, plot_info_latt
+from magic.modules.functions import random_wn_state
 
 #%%
 

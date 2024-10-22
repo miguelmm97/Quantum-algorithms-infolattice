@@ -8,12 +8,11 @@ import matplotlib.pyplot as plt
 # Imports from Qiskit
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
-from functions import stabiliser_Renyi_entropy_pure, stabiliser_Renyi_entropy_mixed
+from magic.modules.functions import stabiliser_Renyi_entropy_pure, stabiliser_Renyi_entropy_mixed
 
 
 # Information lattice
-from InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
-from functions import random_clifford_circuit
+from magic.modules.functions import random_clifford_circuit
 
 
 #%% Main

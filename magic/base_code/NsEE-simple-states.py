@@ -14,7 +14,7 @@ from qiskit.quantum_info import Clifford
 
 # Information lattice
 from InfoLattice import calc_info, plot_info_latt
-from functions  import random_clifford_circuit
+from magic.modules.functions import random_clifford_circuit
 
 
 #%% EPR pair state
