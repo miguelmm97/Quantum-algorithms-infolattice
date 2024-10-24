@@ -12,7 +12,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from modules.functions import *
 from modules.InfoLattice import calc_info, plot_info_latt
 #%% Loading data
-file_list = ['Exp1.h5']
+file_list = ['Exp4.h5']
 data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data')
 
 
