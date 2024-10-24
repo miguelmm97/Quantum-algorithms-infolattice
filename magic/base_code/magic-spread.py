@@ -132,7 +132,7 @@ for i in range(Nlayers):
 
 
 #%% Saving data
-data_dir = '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data'
+data_dir = '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data'   # '../data'
 file_list = os.listdir(data_dir)
 expID = get_fileID(file_list, common_name='Exp')
 filename = '{}{}{}'.format('Exp', expID, '.h5')

@@ -10,7 +10,7 @@ from modules.functions import *
 
 #%% Loading data
 file_list = ['Exp6.h5', 'Exp7.h5', 'Exp9.h5']
-data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data')
+data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') # '../data'
 
 
 # Parameters
