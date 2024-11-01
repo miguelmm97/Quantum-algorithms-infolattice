@@ -21,6 +21,7 @@ from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
 
 # Information lattice and functions
 from modules.InfoLattice import calc_info, plot_info_latt
+from modules.MagicLattice import calc_magic, plot_magic_latt
 from modules.functions import *
 
 
@@ -52,15 +53,15 @@ loger_main.addHandler(stream_handler)
 #%% Parameters
 
 # Initial state
-n_qubits = 10
+n_qubits = 4
 psi0_label = '0' * n_qubits
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
 
 # Circuit parameters
-Nlayers, Nblocks = 400, 40
+Nlayers, Nblocks = 200, 20
 T_per_block = 1
-min_block, max_block = 0, 1
+min_block, max_block = 0, 4
 info_interval = int(Nlayers/ Nblocks)
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
@@ -68,7 +69,7 @@ qubits = list(range(n_qubits))
 # Preallocation
 info_dict, info_dict_clifford = {}, {}
 state_dict, state_dict_clifford  = {}, {}
-magic = np.zeros((Nlayers, ))
+magic, magic_dict = np.zeros((Nlayers, )), {}
 SRE_clifford, SRE_long_clifford = np.zeros((Nlayers, )), np.zeros((Nlayers, ))
 SRE, SRE_long = np.zeros((Nlayers, )), np.zeros((Nlayers, ))
 
@@ -98,41 +99,16 @@ for i in range(Nlayers):
     psi2 = psi2.evolve(clifford)
     info_latt = calc_info(psi1.data)
     info_latt_clifford = calc_info(psi2.data)
+    magic_latt = calc_magic(psi1.data)
+
     magic[i] = non_integer_magic(info_latt)
     if (i % info_interval) == 0:
         info_dict[i // info_interval] = info_latt
         info_dict_clifford[i // info_interval] = info_latt_clifford
-
-
-    # Stabiliser Renyi entropies
-    # state_dict[i] = psi1.data
-    # state_dict_clifford[i] = psi2.data
-    # rho_clifford = DensityMatrix(psi2)
-    # rho_clifford_A = partial_trace(rho_clifford, [0])
-    # rho_clifford_B = partial_trace(rho_clifford, [1])
-    # SRE_clifford_AB = stabiliser_Renyi_entropy_mixed(rho_clifford, n_qubits)
-    # SRE_clifford_A = stabiliser_Renyi_entropy_mixed(rho_clifford_A, n_qubits - 1)
-    # SRE_clifford_B = stabiliser_Renyi_entropy_mixed(rho_clifford_B, n_qubits - 1)
-    # SRE_clifford[i] = stabiliser_Renyi_entropy_pure(psi2, 2, n_qubits)
-    # SRE_long_clifford[i] = SRE_clifford_AB - SRE_clifford_A - SRE_clifford_B
-
-    # rho = DensityMatrix(psi1)
-    # rho_A = partial_trace(rho, [0])
-    # rho_B = partial_trace(rho, [1])
-    # SRE_AB = stabiliser_Renyi_entropy_mixed(rho, n_qubits)
-    # SRE_A = stabiliser_Renyi_entropy_mixed(rho_A, n_qubits - 1)
-    # SRE_B = stabiliser_Renyi_entropy_mixed(rho_B, n_qubits - 1)
-    # SRE[i] = stabiliser_Renyi_entropy_pure(psi1, 2, n_qubits)
-    # SRE_long[i] = SRE_AB - SRE_A - SRE_B
-
-
-    # print(f'Layer: {i}, Info per scale |psi>:', calc_info_per_scale(info_dict[i], bc='open'))
-
-
-
+        magic_dict[i // info_interval] = magic_latt
 
 #%% Saving data
-data_dir = '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data'   # '../data'
+data_dir = '../data' # '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data'   #
 file_list = os.listdir(data_dir)
 expID = get_fileID(file_list, common_name='Exp')
 filename = '{}{}{}'.format('Exp', expID, '.h5')
@@ -163,3 +139,26 @@ with h5py.File(filepath, 'w') as f:
 
 loger_main.info('Data saved correctly')
 
+# Stabiliser Renyi entropies
+# state_dict[i] = psi1.data
+# state_dict_clifford[i] = psi2.data
+# rho_clifford = DensityMatrix(psi2)
+# rho_clifford_A = partial_trace(rho_clifford, [0])
+# rho_clifford_B = partial_trace(rho_clifford, [1])
+# SRE_clifford_AB = stabiliser_Renyi_entropy_mixed(rho_clifford, n_qubits)
+# SRE_clifford_A = stabiliser_Renyi_entropy_mixed(rho_clifford_A, n_qubits - 1)
+# SRE_clifford_B = stabiliser_Renyi_entropy_mixed(rho_clifford_B, n_qubits - 1)
+# SRE_clifford[i] = stabiliser_Renyi_entropy_pure(psi2, 2, n_qubits)
+# SRE_long_clifford[i] = SRE_clifford_AB - SRE_clifford_A - SRE_clifford_B
+
+# rho = DensityMatrix(psi1)
+# rho_A = partial_trace(rho, [0])
+# rho_B = partial_trace(rho, [1])
+# SRE_AB = stabiliser_Renyi_entropy_mixed(rho, n_qubits)
+# SRE_A = stabiliser_Renyi_entropy_mixed(rho_A, n_qubits - 1)
+# SRE_B = stabiliser_Renyi_entropy_mixed(rho_B, n_qubits - 1)
+# SRE[i] = stabiliser_Renyi_entropy_pure(psi1, 2, n_qubits)
+# SRE_long[i] = SRE_AB - SRE_A - SRE_B
+
+
+# print(f'Layer: {i}, Info per scale |psi>:', calc_info_per_scale(info_dict[i], bc='open'))

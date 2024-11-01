@@ -4,3 +4,7 @@
 *.py[cod]
 *.pdf
 *.png
+/magic/base_code/..modules
+/magic/plotting/..modules
+/magic/base_code/modules
+/magic/plotting/modules

@@ -11,9 +11,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # Modules
 from modules.functions import *
 from modules.InfoLattice import calc_info, plot_info_latt
+from modules.MagicLattice import calc_magic, plot_magic_latt
 #%% Loading data
-file_list = ['Exp4.h5']
-data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') #'../data'
+file_list = ['Exp14.h5']
+data_dict = load_my_data(file_list, '../data') #'/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') #'../data'
 
 
 # Parameters
@@ -39,6 +40,7 @@ psi2 = Statevector.from_label(psi0_label)
 info_interval = int(Nlayers/ Nblocks)
 qubits = list(range(n_qubits))
 info_dict, info_dict_clifford = {}, {}
+magic_dict = {}
 
 # Circuit evolution
 clifford_sequence = QuantumCircuit(n_qubits)
@@ -66,7 +68,7 @@ for i in range(Nlayers):
     if (i % info_interval) == 0:
         info_dict[i // info_interval] = calc_info(psi1.data)
         info_dict_clifford[i // info_interval] = calc_info(psi2.data)
-
+        magic_dict[i // info_interval] = calc_magic(psi1.data)
 
 #%% Figure
 font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 22, }
@@ -138,6 +140,29 @@ cbar_ax = fig2.add_subplot(gs[:, -1])
 divider = make_axes_locatable(cbar_ax)
 cax = divider.append_axes("left", size="20%", pad=0)
 cbar = fig2.colorbar(colormap, cax=cax, orientation='vertical')
+cbar_ax.set_axis_off()
+cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+
+
+# Fig 3: Plots
+fig3 = plt.figure(figsize=(20, 10))
+fig3.suptitle('Magic lattice', fontsize=20)
+gs = GridSpec(Nrows, Ncol + 1, figure=fig3, hspace=0, wspace=0.1)
+for i in range(int(Nlayers/ info_interval)):
+    # Position in the grid
+    row = i // Ncol
+    col = i % Ncol
+    ax = fig3.add_subplot(gs[row, col])
+    # Plots
+    plot_magic_latt(magic_dict[i], ax, color_map, max_value=max_value, indicate_ints=True)
+    ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
+
+
+# Fig 3: Colorbar
+cbar_ax = fig3.add_subplot(gs[:, -1])
+divider = make_axes_locatable(cbar_ax)
+cax = divider.append_axes("left", size="20%", pad=0)
+cbar = fig3.colorbar(colormap, cax=cax, orientation='vertical')
 cbar_ax.set_axis_off()
 cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 
