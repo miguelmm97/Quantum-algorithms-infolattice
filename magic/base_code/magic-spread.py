@@ -20,8 +20,8 @@ from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
 
 # Information lattice and functions
-from modules.InfoLattice import calc_info, plot_info_latt
-from modules.MagicLattice import calc_magic, plot_magic_latt
+from modules.InfoLattice import calc_info
+from modules.MagicLattice import calc_magic, calc_classical_magic
 from modules.functions import *
 
 
@@ -61,7 +61,7 @@ psi2 = Statevector.from_label(psi0_label)
 # Circuit parameters
 Nlayers, Nblocks = 200, 20
 T_per_block = 1
-min_block, max_block = 0, 4
+min_block, max_block = 0, 0
 info_interval = int(Nlayers/ Nblocks)
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
@@ -99,7 +99,9 @@ for i in range(Nlayers):
     psi2 = psi2.evolve(clifford)
     info_latt = calc_info(psi1.data)
     info_latt_clifford = calc_info(psi2.data)
-    magic_latt = calc_magic(psi1.data)
+    # magic_latt = calc_magic(psi1.data)
+    magic_latt = calc_classical_magic(psi1.data)
+
 
     magic[i] = non_integer_magic(info_latt)
     if (i % info_interval) == 0:
@@ -108,7 +110,7 @@ for i in range(Nlayers):
         magic_dict[i // info_interval] = magic_latt
 
 #%% Saving data
-data_dir = '../data' # '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data'   #
+data_dir = '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data'   # '../data' #
 file_list = os.listdir(data_dir)
 expID = get_fileID(file_list, common_name='Exp')
 filename = '{}{}{}'.format('Exp', expID, '.h5')

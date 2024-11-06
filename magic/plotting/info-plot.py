@@ -11,10 +11,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # Modules
 from modules.functions import *
 from modules.InfoLattice import calc_info, plot_info_latt
-from modules.MagicLattice import calc_magic, plot_magic_latt
+from modules.MagicLattice import calc_magic, plot_magic_latt, calc_classical_magic
 #%% Loading data
 file_list = ['Exp14.h5']
-data_dict = load_my_data(file_list, '../data') #'/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') #'../data'
+data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') #'../data'
 
 
 # Parameters
@@ -68,7 +68,7 @@ for i in range(Nlayers):
     if (i % info_interval) == 0:
         info_dict[i // info_interval] = calc_info(psi1.data)
         info_dict_clifford[i // info_interval] = calc_info(psi2.data)
-        magic_dict[i // info_interval] = calc_magic(psi1.data)
+        magic_dict[i // info_interval] = calc_classical_magic(psi1.data)
 
 #%% Figure
 font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 22, }
