@@ -176,9 +176,18 @@ def calc_classical_magic(psi):
         else:
             magic_latt[l] = -SRE1[l] + SRE1[l - 1][:-1] + SRE1[l - 1][1:] - SRE1[l - 2][1:-1]
 
+    return magic_latt
+
+def calc_total_info(magic_latt):
+
     total_info = 0
     for key in magic_latt.keys():
         total_info += np.sum(magic_latt[key])
-    print(total_info)
+    return total_info
 
-    return magic_latt
+def shannon(psi):
+    L = int(np.log2(psi.size))
+    prob_dist = np.array(list(Xi_pure(psi).values()))
+    prob_dist[prob_dist < 1e-16] = 1e-22
+    shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
+    return shannon_entropy

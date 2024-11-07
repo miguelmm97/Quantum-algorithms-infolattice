@@ -21,7 +21,7 @@ from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
 
 # Information lattice and functions
 from modules.InfoLattice import calc_info
-from modules.MagicLattice import calc_magic, calc_classical_magic
+from modules.MagicLattice import calc_magic, calc_classical_magic, calc_total_info, shannon
 from modules.functions import *
 
 
@@ -61,7 +61,7 @@ psi2 = Statevector.from_label(psi0_label)
 # Circuit parameters
 Nlayers, Nblocks = 200, 20
 T_per_block = 1
-min_block, max_block = 0, 0
+min_block, max_block = 1, 10
 info_interval = int(Nlayers/ Nblocks)
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
@@ -71,7 +71,8 @@ info_dict, info_dict_clifford = {}, {}
 state_dict, state_dict_clifford  = {}, {}
 magic, magic_dict = np.zeros((Nlayers, )), {}
 SRE_clifford, SRE_long_clifford = np.zeros((Nlayers, )), np.zeros((Nlayers, ))
-SRE, SRE_long = np.zeros((Nlayers, )), np.zeros((Nlayers, ))
+SRE, SRE_long, shannon_entropy = np.zeros((Nlayers, )), np.zeros((Nlayers, )), np.zeros((Nlayers, ))
+total_magic_info = np.zeros((Nlayers, ))
 
 #%% Circuit
 
@@ -94,16 +95,22 @@ for i in range(Nlayers):
             layer.t(qubit)
     magic_circuit.compose(layer, inplace=True)
 
-    # Information lattice and magic measures
+    # Circuit evolution
     psi1 = psi1.evolve(layer)
     psi2 = psi2.evolve(clifford)
+
+    # Entanglement and magic
     info_latt = calc_info(psi1.data)
     info_latt_clifford = calc_info(psi2.data)
     # magic_latt = calc_magic(psi1.data)
     magic_latt = calc_classical_magic(psi1.data)
-
-
+    # SRE_clifford[i] = stabiliser_Renyi_entropy_pure(psi2, 2, n_qubits)
+    SRE[i] = stabiliser_Renyi_entropy_pure(psi1, 2, n_qubits)
+    shannon_entropy[i] = shannon(psi1.data)
     magic[i] = non_integer_magic(info_latt)
+    total_magic_info[i] = calc_total_info(magic_latt)
+
+    # Recording entanglement/ magic for each block
     if (i % info_interval) == 0:
         info_dict[i // info_interval] = info_latt
         info_dict_clifford[i // info_interval] = info_latt_clifford
@@ -125,6 +132,8 @@ with h5py.File(filepath, 'w') as f:
     store_my_data(simulation,      'SRE_long',            SRE_long)
     store_my_data(simulation,      'SRE_clifford',        SRE_clifford)
     store_my_data(simulation,      'SRE_long_clifford',   SRE_long_clifford)
+    store_my_data(simulation,      'total_magic_info',    total_magic_info)
+    store_my_data(simulation,      'shannon',             shannon_entropy)
 
     # Parameters folder
     parameters = f.create_group('Parameters')
