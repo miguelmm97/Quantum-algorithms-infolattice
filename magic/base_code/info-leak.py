@@ -21,7 +21,7 @@ from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
 
 # Information lattice and functions
 from modules.InfoLattice import calc_info, plot_info_latt
-from modules.MagicLattice import calc_magic, calc_classical_magic, calc_total_info, shannon, plot_magic_latt, nothing
+from modules.MagicLattice import calc_magic, calc_classical_magic, calc_total_info, shannon, plot_magic_latt
 from modules.functions import *
 
 
