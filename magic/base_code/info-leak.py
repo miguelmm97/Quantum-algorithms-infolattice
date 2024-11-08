@@ -53,14 +53,14 @@ loger_main.addHandler(stream_handler)
 #%% Parameters
 
 # Initial state
-n_qubits = 6
+n_qubits = 4
 psi0_label = '0' * n_qubits
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
 
 # Circuit parameters
 Ncliff = 200
-nT = 3
+nT = 2
 seed_list = np.random.randint(0, 1000000, size=(Ncliff, ))
 qubits = list(range(n_qubits))
 
@@ -69,7 +69,8 @@ info_dict = {}
 SRE1_latt_dict = {}
 magic_latt_dict = {}
 nonint_magic = np.zeros((2, ))
-total_info = np.zeros((2, ))
+total_info_SRE1 = np.zeros((2, ))
+total_info_magic = np.zeros((2, ))
 
 #%% Circuit
 
@@ -109,12 +110,16 @@ magic_latt_dict[1] = {key: info_dict[1][key] - SRE1_latt_dict[1][key] for key in
 nonint_magic[0] = non_integer_magic(info_dict[0])
 nonint_magic[1] = non_integer_magic(info_dict[1])
 
-total_info[0] = calc_total_info(magic_latt_dict[0])
-total_info[1] = calc_total_info(magic_latt_dict[1])
+total_info_SRE1[0] = calc_total_info(SRE1_latt_dict[0])
+total_info_SRE1[1] = calc_total_info(SRE1_latt_dict[1])
+
+total_info_magic[0] = calc_total_info(magic_latt_dict[0])
+total_info_magic[1] = calc_total_info(magic_latt_dict[1])
 
 
 print(nonint_magic)
-print(total_info)
+print(total_info_SRE1)
+print(total_info_magic)
 #%% Figure
 font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 22, }
 plt.rc('text', usetex=True)
@@ -122,9 +127,9 @@ plt.rc('font', family='serif')
 axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
 color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
 
-# Defining a colormap (starting in white)
-color_map = plt.get_cmap("Oranges")
-colors = color_map(np.linspace(0, 1, 20))
+# Defining a colormap without negatives
+color_map = plt.get_cmap("PuOr").reversed()
+colors = color_map(np.linspace(0, 1, 41)[20:])
 colors[0] = [1, 1, 1, 1]
 color_map = LinearSegmentedColormap.from_list("custom_colormap", colors)
 
@@ -135,7 +140,18 @@ for key1 in info_dict.keys():
         value = max(info_dict[key1][key2])
         if value > max_value:
             max_value = value
-colormap = cm.ScalarMappable(norm=Normalize(vmin=0., vmax=max_value), cmap=color_map)
+colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)
+
+
+
+# Defining a colormap with negatives
+color_map_neg = plt.get_cmap('PuOr').reversed()
+colors_neg = color_map_neg(np.linspace(0, 1, 41))
+colors_neg[20] = [1, 1, 1, 1]
+color_map_neg = LinearSegmentedColormap.from_list("custom_colormap", colors_neg)
+colormap_neg = cm.ScalarMappable(norm=Normalize(vmin=-2, vmax=2), cmap=color_map_neg)
+
+
 
 # Fig 1: Plot
 fig1 = plt.figure(figsize=(20, 10))
@@ -188,14 +204,14 @@ gs = GridSpec(1, 2, figure=fig2, hspace=0, wspace=0.1)
 ax1_3 = fig3.add_subplot(gs[0, 0])
 ax2_3 = fig3.add_subplot(gs[0, 1])
 
-plot_info_latt(magic_latt_dict[0], ax1_3, color_map, max_value=max_value, indicate_ints=True)
-plot_info_latt(magic_latt_dict[1], ax2_3, color_map, max_value=max_value, indicate_ints=True)
+plot_info_latt(magic_latt_dict[0], ax1_3, color_map_neg, min_value=-max_value, max_value=max_value, indicate_ints=True)
+plot_info_latt(magic_latt_dict[1], ax2_3, color_map_neg, min_value=-max_value, max_value=max_value, indicate_ints=True)
 
 # Fig 1: Colorbar
 cbar_ax = fig3.add_subplot(gs[:, -1])
 divider = make_axes_locatable(cbar_ax)
 cax = divider.append_axes("left", size="5%", pad=0)
-cbar = fig3.colorbar(colormap, cax=cax, orientation='vertical')
+cbar = fig3.colorbar(colormap_neg, cax=cax, orientation='vertical')
 cbar_ax.set_axis_off()
 cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 

@@ -9,7 +9,7 @@ from matplotlib.gridspec import GridSpec
 from modules.functions import *
 
 #%% Loading data
-file_list = ['Exp22.h5']
+file_list = ['Exp23.h5']
 data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') # '../data'
 
 

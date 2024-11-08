@@ -53,7 +53,7 @@ loger_main.addHandler(stream_handler)
 #%% Parameters
 
 # Initial state
-n_qubits = 4
+n_qubits = 5
 psi0_label = '0' * n_qubits
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
@@ -61,7 +61,7 @@ psi2 = Statevector.from_label(psi0_label)
 # Circuit parameters
 Nlayers, Nblocks = 200, 20
 T_per_block = 1
-min_block, max_block = 1, 10
+min_block, max_block = 0, 3
 info_interval = int(Nlayers/ Nblocks)
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
@@ -79,6 +79,8 @@ total_magic_info = np.zeros((Nlayers, ))
 clifford_sequence = QuantumCircuit(n_qubits)
 magic_circuit = QuantumCircuit(n_qubits)
 for i in range(Nlayers):
+
+    loger_main.info(f'Layer: {i}')
 
     # Generate Clifford layer
     layer = QuantumCircuit(n_qubits)
@@ -108,7 +110,7 @@ for i in range(Nlayers):
     SRE[i] = stabiliser_Renyi_entropy_pure(psi1, 2, n_qubits)
     shannon_entropy[i] = shannon(psi1.data)
     magic[i] = non_integer_magic(info_latt)
-    total_magic_info[i] = calc_total_info(magic_latt)
+    total_magic_info[i] = n_qubits - calc_total_info(magic_latt)
 
     # Recording entanglement/ magic for each block
     if (i % info_interval) == 0:

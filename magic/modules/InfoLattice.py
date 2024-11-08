@@ -243,10 +243,10 @@ def calc_info_per_scale(info_latt, bc='periodic'):
     return info_per_scale
 
 
-def plot_info_latt(info_latt, ax, color_map, max_value=2., indicate_ints=False, tol_ints=1e-14):
+def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate_ints=False, tol_ints=1e-14):
 
     # Color normalisation
-    norm = Normalize(vmin=0., vmax=max_value)
+    norm = Normalize(vmin=min_value, vmax=max_value)
 
     # Plot
     L = max(info_latt.keys())
@@ -255,8 +255,8 @@ def plot_info_latt(info_latt, ax, color_map, max_value=2., indicate_ints=False, 
         for x in range(len(info_latt[l])):
             value = info_latt[l][x]
             if indicate_ints and np.allclose(value, round(value), atol=tol_ints) and round(value) != 0:
-                linewidth = 1
-                edgecolor='black'
+                linewidth = 2
+                edgecolor= 'lightblue' #'black'
             else:
                 linewidth = 0.2
                 edgecolor = 'black'

@@ -79,10 +79,10 @@ def calc_magic(psi):
 
     return magic_latt
 
-def plot_magic_latt(magic_latt, ax, color_map, max_value=2., indicate_ints=False, tol_ints=1e-14):
+def plot_magic_latt(magic_latt, ax, color_map, min_value=0., max_value=2., indicate_ints=False, tol_ints=1e-14):
 
     # Color normalisation
-    norm = Normalize(vmin=0., vmax=max_value)
+    norm = Normalize(vmin=min_value, vmax=max_value)
 
     # Plot
     L = max(magic_latt.keys())

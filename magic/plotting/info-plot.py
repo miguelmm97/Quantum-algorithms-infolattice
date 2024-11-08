@@ -13,7 +13,7 @@ from modules.functions import *
 from modules.InfoLattice import calc_info, plot_info_latt
 from modules.MagicLattice import calc_magic, plot_magic_latt, calc_classical_magic
 #%% Loading data
-file_list = ['Exp22.h5']
+file_list = ['Exp24.h5']
 data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') #'../data'
 
 
@@ -46,6 +46,8 @@ magic_dict, super_magic_dict = {}, {}
 clifford_sequence = QuantumCircuit(n_qubits)
 magic_circuit = QuantumCircuit(n_qubits)
 for i in range(Nlayers):
+
+    print(f'Layer: {i}')
 
     # Generate Clifford layer
     layer = QuantumCircuit(n_qubits)
@@ -81,20 +83,32 @@ plt.rc('font', family='serif')
 axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
 color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
 
-# Defining a colormap (starting in white)
-color_map = plt.get_cmap("Oranges")
-colors = color_map(np.linspace(0, 1, 20))
+
+# Defining a colormap without negatives
+color_map = plt.get_cmap("PuOr").reversed()
+colors = color_map(np.linspace(0, 1, 41)[20:])
 colors[0] = [1, 1, 1, 1]
 color_map = LinearSegmentedColormap.from_list("custom_colormap", colors)
 
 # Normalising the colormap
 max_value = 0.
-for key1 in info_dict_clifford.keys():
-    for key2 in info_dict_clifford[key1].keys():
-        value = max(info_dict_clifford[key1][key2])
+for key1 in info_dict.keys():
+    for key2 in info_dict[key1].keys():
+        value = max(info_dict[key1][key2])
         if value > max_value:
             max_value = value
-colormap = cm.ScalarMappable(norm=Normalize(vmin=0., vmax=max_value), cmap=color_map)
+colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)
+
+
+
+# Defining a colormap with negatives
+color_map_neg = plt.get_cmap('PuOr').reversed()
+colors_neg = color_map_neg(np.linspace(0, 1, 41))
+colors_neg[20] = [1, 1, 1, 1]
+color_map_neg = LinearSegmentedColormap.from_list("custom_colormap", colors_neg)
+colormap_neg = cm.ScalarMappable(norm=Normalize(vmin=-2, vmax=2), cmap=color_map_neg)
+
+
 
 # Fig 1: Plot
 Nrows = int(Nlayers / (info_interval * 10))
@@ -182,7 +196,7 @@ for i in range(int(Nlayers/ info_interval)):
     col = i % Ncol
     ax = fig4.add_subplot(gs[row, col])
     # Plots
-    plot_magic_latt(super_magic_dict[i], ax, color_map, max_value=max_value, indicate_ints=True)
+    plot_magic_latt(super_magic_dict[i], ax, color_map_neg, min_value=-max_value, max_value=max_value, indicate_ints=True)
     ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
 
 
@@ -190,7 +204,7 @@ for i in range(int(Nlayers/ info_interval)):
 cbar_ax = fig4.add_subplot(gs[:, -1])
 divider = make_axes_locatable(cbar_ax)
 cax = divider.append_axes("left", size="20%", pad=0)
-cbar = fig4.colorbar(colormap, cax=cax, orientation='vertical')
+cbar = fig4.colorbar(colormap_neg, cax=cax, orientation='vertical')
 cbar_ax.set_axis_off()
 cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 
