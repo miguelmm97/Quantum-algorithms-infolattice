@@ -191,3 +191,5 @@ def shannon(psi):
     prob_dist[prob_dist < 1e-16] = 1e-22
     shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
     return shannon_entropy
+
+
