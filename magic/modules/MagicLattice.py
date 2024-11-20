@@ -91,7 +91,7 @@ def plot_magic_latt(magic_latt, ax, color_map, min_value=0., max_value=2., indic
         for x in range(len(magic_latt[l])):
             value = magic_latt[l][x]
             if indicate_ints and np.allclose(value, round(value), atol=tol_ints) and round(value) != 0:
-                linewidth = 1
+                linewidth = 3
                 edgecolor='black'
             else:
                 linewidth = 0.2

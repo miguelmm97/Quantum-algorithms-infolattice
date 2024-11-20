@@ -9,7 +9,7 @@ from matplotlib.gridspec import GridSpec
 from modules.functions import *
 
 #%% Loading data
-file_list = ['Exp23.h5']
+file_list = ['Exp27.h5']
 data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') # '../data'
 
 
@@ -22,7 +22,7 @@ min_block1     = data_dict[file_list[0]]['Parameters']['min_block']
 max_block1     = data_dict[file_list[0]]['Parameters']['max_block']
 
 # Simulation data
-total_magic_info  = data_dict[file_list[0]]['Simulation']['total_magic_info']
+total_magic_info  = 4 - data_dict[file_list[0]]['Simulation']['total_magic_info']
 SRE               = data_dict[file_list[0]]['Simulation']['SRE']
 shannon           = data_dict[file_list[0]]['Simulation']['shannon']
 T_layers1 = int(Nlayers1/ Nblocks1) * np.arange(min_block1, max_block1)

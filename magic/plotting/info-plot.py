@@ -13,7 +13,7 @@ from modules.functions import *
 from modules.InfoLattice import calc_info, plot_info_latt
 from modules.MagicLattice import calc_magic, plot_magic_latt, calc_classical_magic
 #%% Loading data
-file_list = ['Exp24.h5']
+file_list = ['Exp31.h5']
 data_dict = load_my_data(file_list, '/home/mfmm/Projects/quantum-algorithms-info/git-repo/magic/data') #'../data'
 
 
@@ -70,9 +70,9 @@ for i in range(Nlayers):
     if (i % info_interval) == 0:
         info_dict[i // info_interval] = calc_info(psi1.data)
         info_dict_clifford[i // info_interval] = calc_info(psi2.data)
-        magic_dict[i // info_interval] = calc_classical_magic(psi1.data)
-        super_magic_dict[i // info_interval] = {key: info_dict[i // info_interval][key] - magic_dict[i // info_interval][key]
-                                                for key in info_dict[i // info_interval].keys()}
+        # magic_dict[i // info_interval] = calc_classical_magic(psi1.data)
+        # super_magic_dict[i // info_interval] = {key: info_dict[i // info_interval][key] - magic_dict[i // info_interval][key]
+        #                                         for key in info_dict[i // info_interval].keys()}
 
 
 
@@ -114,7 +114,7 @@ colormap_neg = cm.ScalarMappable(norm=Normalize(vmin=-2, vmax=2), cmap=color_map
 Nrows = int(Nlayers / (info_interval * 10))
 Ncol = 10
 fig1 = plt.figure(figsize=(20, 10))
-fig1.suptitle('$\mathcal{U}\\vert \psi \\rangle$ with $\mathcal{U}=\langle H, S, CNOT, T\\rangle$', fontsize=20)
+fig1.suptitle('Info lattice', fontsize=20)
 gs = GridSpec(Nrows, Ncol+1, figure=fig1, hspace=0, wspace=0.1)
 for i in range(int(Nlayers / info_interval)):
     # Position in the grid
@@ -138,75 +138,75 @@ cbar = fig1.colorbar(colormap, cax=cax, orientation='vertical')
 cbar_ax.set_axis_off()
 cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 
-
-# Fig 2: Plots
-fig2 = plt.figure(figsize=(20, 10))
-fig2.suptitle('$\mathcal{U}\\vert \psi \\rangle$ with $\mathcal{U}=\langle H, S, CNOT\\rangle$', fontsize=20)
-gs = GridSpec(Nrows, Ncol + 1, figure=fig2, hspace=0, wspace=0.1)
-for i in range(int(Nlayers/ info_interval)):
-    # Position in the grid
-    row = i // Ncol
-    col = i % Ncol
-    ax = fig2.add_subplot(gs[row, col])
-    # Plots
-    plot_info_latt(info_dict_clifford[i], ax, color_map, max_value=max_value, indicate_ints=True)
-    ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
-
-
-# Fig 2: Colorbar
-cbar_ax = fig2.add_subplot(gs[:, -1])
-divider = make_axes_locatable(cbar_ax)
-cax = divider.append_axes("left", size="20%", pad=0)
-cbar = fig2.colorbar(colormap, cax=cax, orientation='vertical')
-cbar_ax.set_axis_off()
-cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
-
-
-# Fig 3: Plots
-fig3 = plt.figure(figsize=(20, 10))
-fig3.suptitle('Magic lattice', fontsize=20)
-gs = GridSpec(Nrows, Ncol + 1, figure=fig3, hspace=0, wspace=0.1)
-for i in range(int(Nlayers/ info_interval)):
-    # Position in the grid
-    row = i // Ncol
-    col = i % Ncol
-    ax = fig3.add_subplot(gs[row, col])
-    # Plots
-    plot_magic_latt(magic_dict[i], ax, color_map, max_value=max_value, indicate_ints=True)
-    ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
-
-
-# Fig 3: Colorbar
-cbar_ax = fig3.add_subplot(gs[:, -1])
-divider = make_axes_locatable(cbar_ax)
-cax = divider.append_axes("left", size="20%", pad=0)
-cbar = fig3.colorbar(colormap, cax=cax, orientation='vertical')
-cbar_ax.set_axis_off()
-cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
-
-
-
-# Fig 4: Plots
-fig4 = plt.figure(figsize=(20, 10))
-fig4.suptitle('Super Magic lattice', fontsize=20)
-gs = GridSpec(Nrows, Ncol + 1, figure=fig4, hspace=0, wspace=0.1)
-for i in range(int(Nlayers/ info_interval)):
-    # Position in the grid
-    row = i // Ncol
-    col = i % Ncol
-    ax = fig4.add_subplot(gs[row, col])
-    # Plots
-    plot_magic_latt(super_magic_dict[i], ax, color_map_neg, min_value=-max_value, max_value=max_value, indicate_ints=True)
-    ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
-
-
-# Fig 4: Colorbar
-cbar_ax = fig4.add_subplot(gs[:, -1])
-divider = make_axes_locatable(cbar_ax)
-cax = divider.append_axes("left", size="20%", pad=0)
-cbar = fig4.colorbar(colormap_neg, cax=cax, orientation='vertical')
-cbar_ax.set_axis_off()
-cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+#
+# # Fig 2: Plots
+# fig2 = plt.figure(figsize=(20, 10))
+# fig2.suptitle('Info lattice (Clifford)', fontsize=20)
+# gs = GridSpec(Nrows, Ncol + 1, figure=fig2, hspace=0, wspace=0.1)
+# for i in range(int(Nlayers/ info_interval)):
+#     # Position in the grid
+#     row = i // Ncol
+#     col = i % Ncol
+#     ax = fig2.add_subplot(gs[row, col])
+#     # Plots
+#     plot_info_latt(info_dict_clifford[i], ax, color_map, max_value=max_value, indicate_ints=True)
+#     ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
+#
+#
+# # Fig 2: Colorbar
+# cbar_ax = fig2.add_subplot(gs[:, -1])
+# divider = make_axes_locatable(cbar_ax)
+# cax = divider.append_axes("left", size="20%", pad=0)
+# cbar = fig2.colorbar(colormap, cax=cax, orientation='vertical')
+# cbar_ax.set_axis_off()
+# cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+#
+#
+# # Fig 3: Plots
+# fig3 = plt.figure(figsize=(20, 10))
+# fig3.suptitle('SRE1 lattice', fontsize=20)
+# gs = GridSpec(Nrows, Ncol + 1, figure=fig3, hspace=0, wspace=0.1)
+# for i in range(int(Nlayers/ info_interval)):
+#     # Position in the grid
+#     row = i // Ncol
+#     col = i % Ncol
+#     ax = fig3.add_subplot(gs[row, col])
+#     # Plots
+#     plot_magic_latt(magic_dict[i], ax, color_map, max_value=max_value, indicate_ints=True)
+#     ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
+#
+#
+# # Fig 3: Colorbar
+# cbar_ax = fig3.add_subplot(gs[:, -1])
+# divider = make_axes_locatable(cbar_ax)
+# cax = divider.append_axes("left", size="20%", pad=0)
+# cbar = fig3.colorbar(colormap, cax=cax, orientation='vertical')
+# cbar_ax.set_axis_off()
+# cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+#
+#
+#
+# # Fig 4: Plots
+# fig4 = plt.figure(figsize=(20, 10))
+# fig4.suptitle('Magic lattice', fontsize=20)
+# gs = GridSpec(Nrows, Ncol + 1, figure=fig4, hspace=0, wspace=0.1)
+# for i in range(int(Nlayers/ info_interval)):
+#     # Position in the grid
+#     row = i // Ncol
+#     col = i % Ncol
+#     ax = fig4.add_subplot(gs[row, col])
+#     # Plots
+#     plot_magic_latt(super_magic_dict[i], ax, color_map_neg, min_value=-max_value, max_value=max_value, indicate_ints=True)
+#     ax.set_title(f'$N= {i * int(Nlayers/ Nblocks)}$')
+#
+#
+# # Fig 4: Colorbar
+# cbar_ax = fig4.add_subplot(gs[:, -1])
+# divider = make_axes_locatable(cbar_ax)
+# cax = divider.append_axes("left", size="20%", pad=0)
+# cbar = fig4.colorbar(colormap_neg, cax=cax, orientation='vertical')
+# cbar_ax.set_axis_off()
+# cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 
 plt.show()
 

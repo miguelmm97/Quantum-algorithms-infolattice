@@ -53,14 +53,14 @@ loger_main.addHandler(stream_handler)
 #%% Parameters
 
 # Initial state
-n_qubits = 4
+n_qubits = 3
 psi0_label = '0' * n_qubits
 psi1 = Statevector.from_label(psi0_label)
 psi2 = Statevector.from_label(psi0_label)
 
 # Circuit parameters
 Ncliff = 200
-nT = 2
+nT = 1
 seed_list = np.random.randint(0, 1000000, size=(Ncliff, ))
 qubits = list(range(n_qubits))
 
@@ -126,6 +126,7 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
 color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
+fontsize = 20
 
 # Defining a colormap without negatives
 color_map = plt.get_cmap("PuOr").reversed()
@@ -215,4 +216,7 @@ cbar = fig3.colorbar(colormap_neg, cax=cax, orientation='vertical')
 cbar_ax.set_axis_off()
 cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 
+fig1.savefig(f'presentation1-info.pdf', format='pdf', backend='pgf')
+fig2.savefig(f'presentation1-sre1.pdf', format='pdf', backend='pgf')
+fig3.savefig(f'presentation1-magic.pdf', format='pdf', backend='pgf')
 plt.show()
