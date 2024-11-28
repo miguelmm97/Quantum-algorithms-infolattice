@@ -9,6 +9,7 @@ from qiskit.quantum_info import Pauli
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib import colorbar
+from matplotlib.gridspec import GridSpec
 
 
 # Quantum magic lattice
@@ -104,6 +105,8 @@ def plot_magic_latt(magic_latt, ax, color_map, min_value=0., max_value=2., indic
 
 
 
+
+
 # Classical magic lattice
 
 def Xi_pure(psi):
@@ -135,6 +138,27 @@ def calc_Xi_subsystem(Xi_pure, n, l, pauli_strings):
 
     # print(np.sum(prob_dist_nl))
     return prob_dist_nl
+
+def calc_all_Xi(psi):
+
+    full_prob = Xi_pure(psi)
+    L = int(np.log2(psi.size))
+    prob_dist = {}
+
+    for l in range(1, L + 1):
+
+        # Pauli strings for the subsystem
+        pauli_strings = []
+        pauli_iter = product('IXYZ', repeat=l)
+        for element in pauli_iter:
+            pauli_strings.append(''.join(element))
+        prob_dist[l] = {}
+
+        for n in range(L - l + 1):
+            prob_nl = calc_Xi_subsystem(full_prob, n, l, pauli_strings)
+            prob_dist[l][n] = prob_nl
+
+    return prob_dist
 
 def calc_classical_SRE1(psi):
 
@@ -191,4 +215,31 @@ def shannon(psi):
     prob_dist[prob_dist < 1e-16] = 1e-22
     shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
     return shannon_entropy
+
+def plot_probabilities(prob_dist, num_qubits, fig):
+
+    gs = GridSpec(num_qubits, num_qubits, figure=fig, hspace=0.25, wspace=0.25)
+    for l in prob_dist.keys():
+
+        # Pauli strings for the subsystem
+        pauli_strings = []
+        pauli_iter = product('IXYZ', repeat=l)
+        for element in pauli_iter:
+            pauli_strings.append(''.join(element))
+
+
+        for n in prob_dist[l].keys():
+            ax = fig.add_subplot(gs[num_qubits - l, n])
+            n_paulis = len(prob_dist[l][n])
+            ax.plot(np.arange(n_paulis), prob_dist[l][n], 'o', color='Blue')
+
+            for i, string in enumerate(pauli_strings):
+                if prob_dist[l][n][i] > 1e-10:
+                    ax.text(i + len(pauli_strings) / 50, prob_dist[l][n][i], f'{string}')
+
+            ax.set_ylim(bottom=0)
+            ax.set_ylabel('$\Xi$', fontsize='20')
+            ax.set_xlabel('$\sigma$', fontsize='20')
+
+
 

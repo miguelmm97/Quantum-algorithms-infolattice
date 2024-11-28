@@ -257,6 +257,9 @@ def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate
             if indicate_ints and np.allclose(value, round(value), atol=tol_ints) and round(value) != 0:
                 linewidth = 3
                 edgecolor= 'black'
+            elif value < -1e-10:
+                linewidth = 3
+                edgecolor = 'blue'
             else:
                 linewidth = 0.2
                 edgecolor = 'black'
