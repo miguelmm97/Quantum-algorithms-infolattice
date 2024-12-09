@@ -1,6 +1,4 @@
 import numpy as np
-from scipy.linalg import eigvalsh as scipy_eigvalsh
-from numpy.linalg import eigvalsh as numpy_eigvalsh
 from qiskit.quantum_info import DensityMatrix, partial_trace
 from itertools import product
 from qiskit.quantum_info import Pauli
@@ -13,19 +11,21 @@ from matplotlib.gridspec import GridSpec
 
 
 # Quantum magic lattice
-
 def partial_trace(psi_full, n, l):
 
+    # Vectorised density matrix
     rho_vec = np.kron(psi_full, np.conj(psi_full))
     L = int(np.log2(np.size(rho_vec))) // 2
     rho = np.reshape(rho_vec, (2 * L) * [2])
 
+    # Subsystem density matrix
     for w in range(L - l):
         if w < n:
             rho = np.trace(rho, axis1=0, axis2=L - w)
         elif w == n or w > n:
             rho = np.trace(rho, axis1=l, axis2=l + L - w)
     dim = 2 ** (l)
+
     return np.reshape(rho, (dim, dim))
 
 def Xi_mixed(rho_subsystem, pauli_strings):
@@ -36,6 +36,7 @@ def Xi_mixed(rho_subsystem, pauli_strings):
         P = Pauli(pauli_string).to_matrix()
         Tr_rhoP[i] = np.abs(np.trace(rho_subsystem @ P))
     Xi_mixed = (Tr_rhoP ** 2) / np.sum(Tr_rhoP ** 2)
+
     return Xi_mixed
 
 def calc_SRE1(psi):
@@ -44,6 +45,7 @@ def calc_SRE1(psi):
     SRE1 = {}
 
     for l in range(1, L + 1):
+
         # Pauli strings for the subsystem
         pauli_strings = []
         pauli_iter = product('IXYZ', repeat=l)
@@ -104,11 +106,7 @@ def plot_magic_latt(magic_latt, ax, color_map, min_value=0., max_value=2., indic
     ax.axis('off')
 
 
-
-
-
 # Classical magic lattice
-
 def Xi_pure(psi):
 
     # Pauli strings
@@ -136,11 +134,11 @@ def calc_Xi_subsystem(Xi_pure, n, l, pauli_strings):
             if P == key[n: n + l]:
                 prob_dist_nl[i] += Xi_pure[key]
 
-    # print(np.sum(prob_dist_nl))
     return prob_dist_nl
 
 def calc_all_Xi(psi):
 
+    # Preallocation
     full_prob = Xi_pure(psi)
     L = int(np.log2(psi.size))
     prob_dist = {}
@@ -152,8 +150,9 @@ def calc_all_Xi(psi):
         pauli_iter = product('IXYZ', repeat=l)
         for element in pauli_iter:
             pauli_strings.append(''.join(element))
-        prob_dist[l] = {}
 
+        # Probability distribution for each subsystem
+        prob_dist[l] = {}
         for n in range(L - l + 1):
             prob_nl = calc_Xi_subsystem(full_prob, n, l, pauli_strings)
             prob_dist[l][n] = prob_nl
@@ -162,11 +161,13 @@ def calc_all_Xi(psi):
 
 def calc_classical_SRE1(psi):
 
+    # Preallocation
     full_prob = Xi_pure(psi)
     L = int(np.log2(psi.size))
     SRE1 = {}
 
     for l in range(1, L + 1):
+
         # Pauli strings for the subsystem
         pauli_strings = []
         pauli_iter = product('IXYZ', repeat=l)
@@ -188,10 +189,13 @@ def calc_classical_SRE1(psi):
 
 def calc_classical_magic(psi):
 
+    # Definition and preallocation
     assert len(psi.shape) == 1
     L = int(np.log2(psi.size))
     SRE1 = calc_classical_SRE1(psi)
     magic_latt = {}
+
+    # Levels of the information (magic) lattice
     for l in range(1, L + 1):
         if l == 1:
             magic_latt[l] = l - SRE1[l]
@@ -240,6 +244,8 @@ def plot_probabilities(prob_dist, num_qubits, fig):
             ax.set_ylim(bottom=0)
             ax.set_ylabel('$\Xi$', fontsize='20')
             ax.set_xlabel('$\sigma$', fontsize='20')
+
+
 
 
 

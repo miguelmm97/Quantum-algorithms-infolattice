@@ -94,6 +94,7 @@ for qubit in operands:
 magic_circuit.compose(clifford_sequence, inplace=True)
 magic_circuit.compose(layer, inplace=True)
 
+#%% Circuit evolution and magic lattice
 
 psi_clifford = psi1.evolve(clifford_sequence)
 psi_magic = psi1.evolve(magic_circuit)
@@ -215,8 +216,8 @@ cax = divider.append_axes("left", size="5%", pad=0)
 cbar = fig3.colorbar(colormap_neg, cax=cax, orientation='vertical')
 cbar_ax.set_axis_off()
 cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
-
-fig1.savefig(f'presentation1-info.pdf', format='pdf', backend='pgf')
-fig2.savefig(f'presentation1-sre1.pdf', format='pdf', backend='pgf')
-fig3.savefig(f'presentation1-magic.pdf', format='pdf', backend='pgf')
+#
+# # fig1.savefig(f'presentation1-info.pdf', format='pdf', backend='pgf')
+# fig2.savefig(f'presentation1-sre1.pdf', format='pdf', backend='pgf')
+# fig3.savefig(f'presentation1-magic.pdf', format='pdf', backend='pgf')
 plt.show()
