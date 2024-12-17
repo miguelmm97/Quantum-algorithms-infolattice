@@ -16,6 +16,7 @@ from qiskit.quantum_info import Statevector
 from modules.InfoLattice import calc_info, plot_info_latt
 from modules.functions import random_wn_state
 from modules.MagicLattice import calc_classical_magic, plot_magic_latt, calc_all_Xi, plot_probabilities
+from code_alma import find_best_circuit_old
 
 
 #%% Main
@@ -38,60 +39,78 @@ prob_dist = {}
 n_qubits = 4
 qc_w = QuantumCircuit(n_qubits)
 psi0_label = '0' * n_qubits
-psi1 = Statevector.from_label(psi0_label)
+psi0 = Statevector.from_label(psi0_label)
 phi_y = np.pi / 2 - np.arctan(1/ np.sqrt(2))
 phi_z = np.pi / 4
 
 # qc_w.ry(phi_y, 0)
 # qc_w.ry(phi_y, 2)
-# qc_w.h([0, 2])
-# qc_w.cx(0, 1)
-# qc_w.cx(2, 1)
+qc_w.h([0, 2])
+qc_w.cx(0, 1)
+qc_w.cx(2, 1)
+qc_w.h(3)
+qc_w.t(3)
 
-info_dict[0] = calc_info(psi1.evolve(qc_w).data)
-SRE1_dict[0] = calc_classical_magic(psi1.evolve(qc_w).data)
+
+
+psi1 = psi0.evolve(qc_w)
+min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
+psi = psi1.evolve(min_qc)
+info_dict[0] = calc_info(psi0.evolve(qc_w).data)
+SRE1_dict[0] = calc_classical_magic(psi.data)
 magic_dict[0] = {key: info_dict[0][key] - SRE1_dict[0][key] for key in info_dict[0].keys()}
-prob_dist[0] = calc_all_Xi(psi1.evolve(qc_w).data)
+# prob_dist[0] = calc_all_Xi(psi1.evolve(qc_w).data)
 
 
-qc_w.rz(phi_z, 0)
-# qc_w.h(0)
-# qc_w.cx(0, 1)
-info_dict[1] = calc_info(psi1.evolve(qc_w).data)
-SRE1_dict[1] = calc_classical_magic(psi1.evolve(qc_w).data)
+# qc_w.rz(phi_z, 0)
+qc_w.h(0)
+qc_w.cx(0, 1)
+psi1 = psi0.evolve(qc_w)
+min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
+psi = psi1.evolve(min_qc)
+info_dict[1] = calc_info(psi0.evolve(qc_w).data)
+SRE1_dict[1] = calc_classical_magic(psi.data)
 magic_dict[1] = {key: info_dict[1][key] - SRE1_dict[1][key] for key in info_dict[1].keys()}
-prob_dist[1] = calc_all_Xi(psi1.evolve(qc_w).data)
+# prob_dist[1] = calc_all_Xi(psi1.evolve(qc_w).data)
 
 # qc_w.rz(phi_z * 2, 0)
 # qc_w.ry(phi_y, 0)
 # qc_w.rz(phi_z, 0)
 qc_w.s(2)
 qc_w.cx(2, 1)
-info_dict[2] = calc_info(psi1.evolve(qc_w).data)
-SRE1_dict[2] = calc_classical_magic(psi1.evolve(qc_w).data)
+psi1 = psi0.evolve(qc_w)
+min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
+psi = psi1.evolve(min_qc)
+info_dict[2] =  calc_info(psi0.evolve(qc_w).data)
+SRE1_dict[2] = calc_classical_magic(psi.data)
 magic_dict[2] = {key: info_dict[2][key] - SRE1_dict[2][key] for key in info_dict[2].keys()}
-prob_dist[2] = calc_all_Xi(psi1.evolve(qc_w).data)
+# prob_dist[2] = calc_all_Xi(psi1.evolve(qc_w).data)
 
-qc_w.ry(phi_y, 1)
+# qc_w.ry(phi_y, 1)
 # qc_w.rz(phi_z  *3, 1)
-# qc_w.h(1)
-# qc_w.cx(1, 0)
+qc_w.h(1)
+qc_w.cx(1, 0)
 # qc_w.cx(1, 2)
-info_dict[3] = calc_info(psi1.evolve(qc_w).data)
-SRE1_dict[3] = calc_classical_magic(psi1.evolve(qc_w).data)
+psi = psi0.evolve(qc_w)
+# min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
+# psi = psi1.evolve(min_qc)
+info_dict[3] =  calc_info(psi0.evolve(qc_w).data)
+SRE1_dict[3] = calc_classical_magic(psi.data)
 magic_dict[3] = {key: info_dict[3][key] - SRE1_dict[3][key] for key in info_dict[3].keys()}
-prob_dist[3] = calc_all_Xi(psi1.evolve(qc_w).data)
+# prob_dist[3] = calc_all_Xi(psi1.evolve(qc_w).data)
 
 # qc_w.ry(phi_y, 1)
 # qc_w.rz(phi_z, 1)
 # qc_w.ry(phi_y, 0).inverse()
 # qc_w.ry(phi_y, 2).inverse()
 
-
-info_dict[4] = calc_info(psi1.evolve(qc_w).data)
-SRE1_dict[4] = calc_classical_magic(psi1.evolve(qc_w).data)
+psi = psi0.evolve(qc_w)
+# min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
+# psi = psi1.evolve(min_qc)
+info_dict[4] = calc_info(psi.data)
+SRE1_dict[4] = calc_classical_magic(psi.data)
 magic_dict[4] = {key: info_dict[4][key] - SRE1_dict[4][key] for key in info_dict[4].keys()}
-prob_dist[4] = calc_all_Xi(psi1.evolve(qc_w).data)
+# prob_dist[4] = calc_all_Xi(psi1.evolve(qc_w).data)
 
 qc_w.draw(output="mpl", style="iqp")
 
@@ -233,16 +252,16 @@ for i, ax in enumerate(ax_vec_2):
 # cbar_ax.set_axis_off()
 # cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 
-
-fig5 = plt.figure(figsize=(15, 15))
-fig6 = plt.figure(figsize=(15, 15))
-fig7 = plt.figure(figsize=(15, 15))
-fig8 = plt.figure(figsize=(15, 15))
-fig9 = plt.figure(figsize=(15, 15))
-fig_list = [fig5, fig6, fig7, fig8, fig9]
-for step in prob_dist.keys():
-    fig_list[step].suptitle(f'Step {step}', fontsize=20)
-    plot_probabilities(prob_dist[step], 3, fig_list[step])
+#
+# fig5 = plt.figure(figsize=(15, 15))
+# fig6 = plt.figure(figsize=(15, 15))
+# fig7 = plt.figure(figsize=(15, 15))
+# fig8 = plt.figure(figsize=(15, 15))
+# fig9 = plt.figure(figsize=(15, 15))
+# fig_list = [fig5, fig6, fig7, fig8, fig9]
+# for step in prob_dist.keys():
+#     fig_list[step].suptitle(f'Step {step}', fontsize=20)
+#     plot_probabilities(prob_dist[step], 4, fig_list[step])
 
 
 plt.show()

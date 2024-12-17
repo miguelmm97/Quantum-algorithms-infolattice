@@ -28,8 +28,8 @@ import os
 import h5py
 
 # Modules
-from InfoLattice import calc_info, plot_info_latt
-from MagicLattice import calc_classical_magic, calc_all_Xi
+# from InfoLattice import calc_info, plot_info_latt
+# from MagicLattice import calc_classical_magic, calc_all_Xi
 
 
 # %% Logging setup
@@ -210,12 +210,13 @@ def non_integer_magic(info_lattice):
             magic += np.abs(info - round(info))
     return magic
 
-def plot_lattice_from_circuit(circuit_list, psi0, fig, calc_prob=False, show_circuit=False, plot_together=False):
+def plot_lattice_from_circuit(circuit_list, psi0, fig, return_info=False, show_circuit=False):
 
     # Definitions
+    qc = QuantumCircuit(np.int(np.log2(psi0.data)))
     info_latt = {}
     SRE1_latt = {}
-    if calc_prob:
+    if return_info:
         prob_dist = {}
 
     # Calculation of information and magic at each circuit step
@@ -224,7 +225,8 @@ def plot_lattice_from_circuit(circuit_list, psi0, fig, calc_prob=False, show_cir
         psi_t = psi_t.evolve(step).data
         info_latt[i] = calc_info(psi_t)
         SRE1_latt[i] = calc_classical_magic(psi_t)
-        if calc_prob:
+        qc.compose(circuit_list[i], inplace=True)
+        if return_info:
             prob_dist[i] = calc_all_Xi(psi_t)
 
 
@@ -236,23 +238,41 @@ def plot_lattice_from_circuit(circuit_list, psi0, fig, calc_prob=False, show_cir
     max_value = 2.
     colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)
 
+    # Figure
+    Ncol = len(circuit_list) % 10
+    Nrow = 1 + (len(circuit_list) // 10)
+    gs = GridSpec(2 * Nrow, Ncol + 1, figure=fig, hspace=0, wspace=0.1)
+    for i in range(len(circuit_list)):
+        column = i % 10
+        row = (i // 10)
+        ax1 = fig.add_subplot(gs[row, column])
+        ax2 = fig.add_subplot(gs[row + Nrow, column])
+        plot_info_latt(info_latt[i], ax1, color_map, max_value=max_value, indicate_ints=True)
+        plot_info_latt(SRE1_latt[i], ax2, color_map, max_value=max_value, indicate_ints=True)
+
+    # Colorbar
+    cbar_ax = fig.add_subplot(gs[0, -1])
+    divider = make_axes_locatable(cbar_ax)
+    cax = divider.append_axes("left", size="10%", pad=0)
+    cbar = fig.colorbar(colormap, cax=cax, orientation='vertical')
+    cbar_ax.set_axis_off()
+    cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+
+    if show_circuit:
+        qc.draw(output="mpl", style="iqp")
+
+    if return_info:
+        return info_latt, SRE1_latt, prob_dist
+    else:
+        pass
 
 
-    if plot_together:
-        Ncol = len(circuit_list)
-        gs = GridSpec(2, Ncol + 1, figure=fig, hspace=0, wspace=0.1)
-        for i in range(len(circuit_list)):
-            ax1 = fig.add_subplot(gs[0, i])
-            ax2 = fig.add_subplot(gs[1, i])
-            plot_info_latt(info_latt[i], ax1, color_map, max_value=max_value, indicate_ints=True)
-            plot_info_latt(SRE1_latt[i], ax2, color_map, max_value=max_value, indicate_ints=True)
 
-        cbar_ax = fig.add_subplot(gs[0, -1])
-        divider = make_axes_locatable(cbar_ax)
-        cax = divider.append_axes("left", size="10%", pad=0)
-        cbar = fig.colorbar(colormap, cax=cax, orientation='vertical')
-        cbar_ax.set_axis_off()
-        cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+
+
+
+
+
 
 
 # Random
