@@ -15,8 +15,8 @@ from qiskit.quantum_info import Statevector
 # Information lattice
 from modules.InfoLattice import calc_info, plot_info_latt
 from modules.functions import random_wn_state
-from modules.MagicLattice import calc_classical_magic, plot_magic_latt, calc_all_Xi, plot_probabilities
-from code_alma import find_best_circuit_old
+from modules.MagicLattice import calc_classical_magic, plot_magic_latt, minimal_clifford_disentanglers, minimise_entanglement
+
 
 
 #%% Main
@@ -52,10 +52,11 @@ qc_w.h(3)
 qc_w.t(3)
 
 
+disentanglers = minimal_clifford_disentanglers()
+
 
 psi1 = psi0.evolve(qc_w)
-min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
-psi = psi1.evolve(min_qc)
+psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[0] = calc_info(psi0.evolve(qc_w).data)
 SRE1_dict[0] = calc_classical_magic(psi.data)
 magic_dict[0] = {key: info_dict[0][key] - SRE1_dict[0][key] for key in info_dict[0].keys()}
@@ -66,8 +67,7 @@ magic_dict[0] = {key: info_dict[0][key] - SRE1_dict[0][key] for key in info_dict
 qc_w.h(0)
 qc_w.cx(0, 1)
 psi1 = psi0.evolve(qc_w)
-min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
-psi = psi1.evolve(min_qc)
+psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[1] = calc_info(psi0.evolve(qc_w).data)
 SRE1_dict[1] = calc_classical_magic(psi.data)
 magic_dict[1] = {key: info_dict[1][key] - SRE1_dict[1][key] for key in info_dict[1].keys()}
@@ -79,8 +79,7 @@ magic_dict[1] = {key: info_dict[1][key] - SRE1_dict[1][key] for key in info_dict
 qc_w.s(2)
 qc_w.cx(2, 1)
 psi1 = psi0.evolve(qc_w)
-min_qc = find_best_circuit_old(psi1, n_qubits)[-1]
-psi = psi1.evolve(min_qc)
+psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[2] =  calc_info(psi0.evolve(qc_w).data)
 SRE1_dict[2] = calc_classical_magic(psi.data)
 magic_dict[2] = {key: info_dict[2][key] - SRE1_dict[2][key] for key in info_dict[2].keys()}

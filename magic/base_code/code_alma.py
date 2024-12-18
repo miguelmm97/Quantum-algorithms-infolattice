@@ -6,14 +6,10 @@ import matplotlib.gridspec as gridspec
 import matplotlib.colors as mcolors
 from itertools import product
 import qiskit  # version 1.2.4
-from qiskit.primitives import StatevectorSampler as Sampler
 from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit.circuit.library.standard_gates import HGate, SGate, TGate, CXGate
 from qiskit.circuit.exceptions import CircuitError
-from qiskit.quantum_info import Statevector,  SparsePauliOp, Pauli, StabilizerState, Operator, random_clifford, DensityMatrix, partial_trace
-from qiskit.visualization import plot_bloch_multivector, plot_histogram
-from qiskit.providers.basic_provider import BasicSimulator
-from qiskit.primitives import StatevectorEstimator
+from qiskit.quantum_info import Statevector, Pauli, partial_trace
 
 params = {"ytick.color" : "black",
           "xtick.color" : "black",
@@ -128,8 +124,8 @@ def disentangle_bell():  # bell and GHZ states for testing
 
     runs = 1
     for j in range(runs):
-        psis_bell, best_circuit_bell = find_best_circuit(psi_bell, N_bell)
-        psis_ghz, best_circuit_ghz = find_best_circuit(psi_ghz, N_ghz)
+        psis_bell, best_circuit_bell = find_best_circuit_old(psi_bell, N_bell)
+        psis_ghz, best_circuit_ghz = find_best_circuit_old(psi_ghz, N_ghz)
         best_circuit_bell.draw(output="mpl", style="iqp")
         best_circuit_ghz.draw(output="mpl", style="iqp")
         t_bell = []
@@ -177,8 +173,8 @@ def simulation_random_greedy_v2(N, tmax):  # tmax no. "steps" of Clifford ops in
         qc = qiskit.QuantumCircuit(N)
         rc_copy = qiskit.QuantumCircuit(N)
         psi0_test = Statevector.from_label("0" * N)
-        for i in range(N-1):  # settings for number of t-gates and length of random clifford circuit
-            random_circuit = random_clifford_circuit(N, N+1, max_operands=2)
+        for i in range(20):  # settings for number of t-gates and length of random clifford circuit
+            random_circuit = random_clifford_circuit(N, 2, max_operands=2)
             qc.compose(random_circuit, inplace=True)
             rc_copy.compose(random_circuit, inplace=True)
             which_t = rnd.randint(0, N - 1)
@@ -219,7 +215,7 @@ def simulation_random_greedy_v2(N, tmax):  # tmax no. "steps" of Clifford ops in
 
 def find_best_circuit(psi, N, tmax=5):
     h = ["I", "H"]
-    v = ["I", "HS", "V"]  # also called V and W, axis swap group; x-y-z -> y-z-x -> z-x-y
+    v = ["I", "W", "V"]  # also called V and W, axis swap group; x-y-z -> y-z-x -> z-x-y
     p = ["I", "X", "Y", "Z"]
 
 
@@ -254,7 +250,7 @@ def find_best_circuit(psi, N, tmax=5):
         for n in range(0, N - 1):
             print(f"trial: {ntrials}")
 
-            all_circuits = []  # should be 20
+            all_circuits = []  # should be 19
 
             if not rev:  # not reversed; normal order
                 q0 = n
@@ -301,6 +297,8 @@ def find_best_circuit(psi, N, tmax=5):
             qc_c4.cx(q0, q1)
             all_circuits.append(qc_c4)
 
+            print(len(all_circuits))
+
             minimizing_circuit = gate_seq_from_row(["I", "I"], q0, q1, N)
             EE_1qb = calculate_EE_sweep(psi, q0, rev)
             for c_idx, circuit in enumerate(all_circuits):
@@ -326,42 +324,37 @@ def find_best_circuit(psi, N, tmax=5):
         nsweeps += 1
     return psis, min_qc
 
-def find_best_circuit_old(psi, N, tmax=5):  # old version with order of operations inverted. works better at disentangling somehow but seems wrong?
-    h = ["I", "H"]
-    v = ["I", "HS", "V"]
-    p = ["I", "X", "Y", "Z"]
+def find_best_circuit_old(psi, N, maxsweeps=5):  # old version with order of operations inverted. works better at disentangling somehow but seems wrong?
 
+
+    # Single qubit gates to sample from
+    v = ["I", "W", "V"]
+
+    # Definitions
     psis = [psi]
+    min_qc = QuantumCircuit(N)
+    v_prime_list = [[i, j] for i in v for j in v]
 
-    p_gates = []
-    h_gates = []
     v_gates = []
     for i in range(0, 2):
-        #p_gates.append(rnd.choice(p))
-        #h_gates.append(rnd.choice(h))
-        #v_gates.append(rnd.choice(v))
-        p_gates.append("I")
-        h_gates.append("I")
         v_gates.append("I")
 
-    min_qc = QuantumCircuit(N)
-
-    v_prime_list = [[i, j] for i in v for j in v]  # all possible combos of v'_0 (x) v'_1
-
-    maxsweeps = tmax  # one sweep = one check (one way) for entire circuit
+    # Starting point of the minimisation
     nsweeps = 0
     ntrials = 0
-    EE, sre = calculate_EE_gen(psi.data)  # initial entanglement entropy
-    print(f"EE_gen = {EE}")
     no_change_count = 0
     no_change = False
+    EE, sre = calculate_EE_gen(psi.data)  # initial entanglement entropy
+    print(f"EE_gen = {EE}")
+
+
     while EE > 1e-1 and nsweeps < maxsweeps and not no_change:
         rev = bool(nsweeps % 2)  # false (normal) for odd sweep (first, third, etc)
         has_changed = False
         for n in range(0, N - 1):
             print(f"trial: {ntrials}")
 
-            all_circuits = []  # should be 20
+            all_circuits = []  # should be 19
 
             if not rev:  # not reversed; normal order
                 q0 = n
@@ -371,41 +364,30 @@ def find_best_circuit_old(psi, N, tmax=5):  # old version with order of operatio
                 q1 = (N - 1) - n - 1
 
             ## Class 1 ##
-            qc_c1 = QuantumCircuit(N)
-            for row in [p_gates, v_gates, h_gates]:
-                operations = gate_seq_from_row(row, q0, q1, N)
-                qc_c1.compose(operations, inplace=True)
-            all_circuits.append(qc_c1)
+            #qc_c1 = QuantumCircuit(N)
+            #all_circuits.append(qc_c1)  #unnecessary
 
             ## Class 2 - CNOT ##
             ## CNOT on the two random qubits
             # same gates as class 1 + all combos of v_1', v_2'
-            qc_c2_init = QuantumCircuit(N)
-            qc_c2_init.compose(gate_seq_from_row(p_gates, q0, q1, N), inplace=True)  # apply p-gates first
-            v_h_gates = [v_gates, h_gates]
             c2_circuits = []
             for v_prime in v_prime_list:
+                qc_c2_v = QuantumCircuit(N)
                 v_operations = gate_seq_from_row(v_prime, q0, q1, N)
-                qc_c2_v = qc_c2_init.compose(v_operations)
+                qc_c2_v.compose(v_operations, inplace=True)
                 qc_c2_v.cx(q0, q1)
-                for row in v_h_gates:
-                    qc_c2_v.compose(gate_seq_from_row(row, q0, q1, N), inplace=True)
                 c2_circuits.append(qc_c2_v)
                 all_circuits.append(qc_c2_v)
 
             ## Class 3 - iSWAP ##
             ## CNOT_(01)CNOT_(10) on the two random qubits
-            # same gates as class 2
-            qc_c3_init = QuantumCircuit(N)
-            qc_c3_init.compose(gate_seq_from_row(p_gates, q0, q1, N), inplace=True)
             c3_circuits = []
             for v_prime in v_prime_list:
+                qc_c3_v = QuantumCircuit(N)
                 v_operations = gate_seq_from_row(v_prime, q0, q1, N)
-                qc_c3_v = qc_c3_init.compose(v_operations)  # new circuit here!
+                qc_c3_v.compose(v_operations, inplace=True)
                 qc_c3_v.cx(q1, q0)
                 qc_c3_v.cx(q0, q1)
-                for row in v_h_gates:
-                    qc_c3_v.compose(gate_seq_from_row(row, q0, q1, N), inplace=True)
                 c3_circuits.append(qc_c3_v)
                 all_circuits.append(qc_c3_v)
 
@@ -413,12 +395,9 @@ def find_best_circuit_old(psi, N, tmax=5):  # old version with order of operatio
             # CNOT_(01)CNOT_(10)CNOT_(01) on the two random qubits
             # same gates as class 1
             qc_c4 = QuantumCircuit(N)
-            qc_c4.compose(gate_seq_from_row(p_gates, q0, q1, N), inplace=True)
             qc_c4.cx(q0, q1)
             qc_c4.cx(q1, q0)
             qc_c4.cx(q0, q1)
-            for row in v_h_gates:
-                qc_c4.compose(gate_seq_from_row(row, q0, q1, N), inplace=True)
             all_circuits.append(qc_c4)
 
             minimizing_circuit = gate_seq_from_row(["I", "I"], q0, q1, N)
@@ -455,6 +434,7 @@ def gate_seq_from_row(row, q0, q1, N):
 def gate_from_str(str, q, N):
     qc = QuantumCircuit(N)
     single_gates = list(str)
+    single_gates.reverse()
     for gate in single_gates:
         if gate == "H":
             qc.h(q)
@@ -466,9 +446,12 @@ def gate_from_str(str, q, N):
             qc.y(q)
         elif gate == "Z":
             qc.z(q)
-        elif gate == "V":
+        elif gate == "V":  # SdgH or HSHS both work. either way V(x-y-z) -> z-x-y (up to signs), where x, y, z are Paulis and V acts by conjugation
             qc.h(q)
             qc.sdg(q)
+        elif gate == "W":  # HS, so that W(x-y-z) -> y-z-x
+            qc.s(q)
+            qc.h(q)
     return qc
 
 def calculate_EE_gen(psi):  # Note: take psi.data as input
@@ -495,29 +478,24 @@ def calculate_EE_gen(psi):  # Note: take psi.data as input
         rho = rho_partial
     return sum(S_cuts), SRE
 
-def calculate_EE_sweep(psi, q0, rev=False):  # specifically for the sweep search
+def calculate_EE_sweep(psi, q0, rev=False):
+
+    # System size and qubits
     N = int(np.log2(len(psi.data)))  # no. qubits
-    #psi.shape = (2 ** N, 1)
-    #rho = np.outer(psi, psi.conj())
-    #rho = rho.reshape([2] * 2 * N)
-    #for i in range(N - 1, q0, -1):
-        #l = rho.ndim
-        #rho = np.trace(rho, axis1=i, axis2=l-1)
-    #dim_fin = rho.ndim // 2
-    #rho = rho.reshape(2 ** dim_fin, 2 ** dim_fin)
     tot_qubits = [i for i in range(0, N)]
-    if q0 == N - 1 or rev:  # first condition just for testing
+
+    # Tracing out the qubits to the left/right of the cut
+    if q0 == N - 1 or rev:
         traced_out_qubits = tot_qubits[:q0]
     else:
         traced_out_qubits = tot_qubits[q0+1:]
+
+    # Reduced density matrix of the cut
     rho = partial_trace(psi, traced_out_qubits)
-    S = 0
     lambdas = np.linalg.eigvalsh(rho)
-    for lamda in lambdas[np.abs(np.array(lambdas)) > 1e-15]:  # remove very small negative values due to numerical artefacts
-        _S = lamda * np.log2(lamda)  # von Neumann entropy
-        S -= _S
-        if math.isnan(_S):
-            print("nan lambda: ", lamda)
+    lambdas = lambdas[np.abs(np.array(lambdas)) > 1e-15]
+    S = - np.sum(lambdas * np.log2(lambdas))
+
     return S
 
 ## not my functions below ##

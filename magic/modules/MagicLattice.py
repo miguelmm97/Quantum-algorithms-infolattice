@@ -1,7 +1,9 @@
 import numpy as np
+import math
 from qiskit.quantum_info import DensityMatrix, partial_trace
 from itertools import product
 from qiskit.quantum_info import Pauli
+from qiskit.circuit import QuantumCircuit
 
 
 import matplotlib.pyplot as plt
@@ -11,7 +13,7 @@ from matplotlib.gridspec import GridSpec
 
 
 # Quantum magic lattice
-def partial_trace(psi_full, n, l):
+def partial_trace_lattice(psi_full, n, l):
 
     # Vectorised density matrix
     rho_vec = np.kron(psi_full, np.conj(psi_full))
@@ -55,7 +57,7 @@ def calc_SRE1(psi):
 
         for n in range(L - l + 1):
             # Subsystem density matrix and probability
-            rho_subsytem = partial_trace(psi, n, l)
+            rho_subsytem = partial_trace_lattice(psi, n, l)
             prob_dist = Xi_mixed(rho_subsytem, pauli_strings)
 
             # Shannon entropy
@@ -159,6 +161,18 @@ def calc_all_Xi(psi):
 
     return prob_dist
 
+def calc_total_SRE1(psi):
+
+    # Preallocation
+    L = int(np.log2(psi.size))
+
+    # Stabilizer Renyi Entropy 1
+    prob_dist = Xi_pure(psi)
+    prob_dist[prob_dist < 1e-16] = 1e-22
+    SRE1 = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
+    return SRE1
+
+
 def calc_classical_SRE1(psi):
 
     # Preallocation
@@ -246,6 +260,157 @@ def plot_probabilities(prob_dist, num_qubits, fig):
             ax.set_xlabel('$\sigma$', fontsize='20')
 
 
+# Minimising entanglement
+def apply_v_pair(v_pair):
+    qc = QuantumCircuit(2)
+    for i in range(2):
+        if v_pair[i]=='V':
+            qc.h(i)
+            qc.s(i)
+        elif v_pair[i]=='W':
+            qc.h(i)
+            qc.s(i)
+            qc.h(i)
+            qc.s(i)
+        else:
+            pass
+    return qc
 
+def minimal_clifford_disentanglers():
 
+    # Single qubit gates to sample from
+    v_list = ["I", "W", "V"]
+    v_pair_list = [[i, j] for i in v_list for j in v_list]
+    all_circuits = []
+
+    # Class 1 - I
+    all_circuits.append(QuantumCircuit(2))
+
+    # Class 2 - CNOT
+    for v_pair in v_pair_list:
+        qc_c2 = apply_v_pair(v_pair)
+        qc_c2.cx(0, 1)
+        all_circuits.append(qc_c2.to_gate())
+
+    # Class 3 - iSWAP
+    for v_pair in v_pair_list:
+        qc_c3 = apply_v_pair(v_pair)
+        qc_c3.cx(1, 0)
+        qc_c3.cx(0, 1)
+        all_circuits.append(qc_c3.to_gate())
+
+    # Class 4 - SWAP
+    qc_c4 = QuantumCircuit(2)
+    qc_c4.cx(0, 1)
+    qc_c4.cx(1, 0)
+    qc_c4.cx(0, 1)
+    all_circuits.append(qc_c4.to_gate())
+
+    return all_circuits
+
+def minimise_entanglement(psi, N, disentangling_gates, maxsweeps=5):
+
+    # Definitions
+    min_qc = QuantumCircuit(N)
+
+    # Starting point of the minimisation
+    tol_EE = 1e-1
+    nsweeps, ntrials = 0, 0
+    no_change_count, no_change = 0, False
+    EE = calculate_EE_gen(psi.data)
+
+    # Minimisation Sweep
+    while EE > tol_EE and nsweeps < maxsweeps and not no_change:
+
+        # Parameters of the minimisation sweep
+        rev = bool(nsweeps % 2)
+        has_changed = False
+
+        # Sweep over all qubits
+        for n in range(0, N - 1):
+
+            # Order of the sweep
+            if rev:
+                q0 = (N - 1) - n
+                q1 = (N - 1) - n - 1
+            else:
+                q0 = n
+                q1 = n + 1
+
+            # Find the best disentangling circuit
+            EE_1qb = calculate_EE_sweep(psi, q0, rev)
+            for gate_idx, gate in enumerate(disentangling_gates):
+
+                # Trial circuit
+                circuit = QuantumCircuit(N)
+                circuit.append(gate, [q0, q1])
+
+                # New entanglement entropy of the cut
+                psi_trial = psi.evolve(circuit)
+                EE_trial = calculate_EE_sweep(psi_trial, q0, rev)
+                if EE_trial < EE_1qb:
+                    EE_1qb = EE_trial
+                    minimizing_circuit = circuit
+                    has_changed = True
+
+            # Evolve with the minimising circuit
+            min_qc.compose(minimizing_circuit, inplace=True)
+            min_qc.draw(output="mpl", style="iqp")
+            plt.show()
+            psi = psi.evolve(minimizing_circuit)
+            EE = calculate_EE_gen(psi.data)
+            print(q0, q1, no_change)
+            ntrials += 1
+
+        # Look for convergence
+        if not has_changed:
+            no_change_count += 1
+            if no_change_count > 1:
+                no_change = True
+        nsweeps += 1
+
+    return psi, min_qc
+
+def calculate_EE_sweep(psi, q0, rev=False):
+
+    # System size and qubits
+    N = int(np.log2(len(psi.data)))  # no. qubits
+    tot_qubits = [i for i in range(0, N)]
+
+    # Tracing out the qubits to the left/right of the cut
+    if q0 == N - 1 or rev:
+        traced_out_qubits = tot_qubits[:q0]
+    else:
+        traced_out_qubits = tot_qubits[q0 + 1:]
+
+    # Reduced density matrix of the cut
+    rho = partial_trace(psi, traced_out_qubits)
+    lambdas = np.linalg.eigvalsh(rho)
+    lambdas[(-1e-13 < lambdas) & (lambdas < 1e-13)] = 1e-13
+    S = - np.sum(lambdas * np.log2(lambdas))
+
+    return S
+
+def calculate_EE_gen(psi):
+
+    # Definitions
+    N = int(np.log2(len(psi)))
+    psi.shape = (2 ** N, 1)
+    S_cuts = []
+
+    # Density matrix
+    rho = np.outer(psi, psi.conj())
+    rho = rho.reshape([2] * 2 * N)
+
+    # Entropy for the cut
+    for n in range(N, 1, -1):
+        l = rho.ndim
+        rho_partial = np.trace(rho, axis1=n - 1, axis2=l - 1)
+        lambdas = np.linalg.eigvalsh(rho_partial.reshape([2 ** (n - 1), 2 ** (n - 1)]))
+        lambdas[(-1e-13 < lambdas) & (lambdas<1e-13)] = 1e-13
+        S = - np.sum(lambdas * np.log2(lambdas))
+        S_cuts.append(S)
+        rho = rho_partial
+
+    return np.sum(S_cuts)
 
