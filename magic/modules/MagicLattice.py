@@ -276,56 +276,60 @@ def apply_v_pair(v_pair):
             pass
     return qc
 
-def minimal_clifford_disentanglers():
+def minimal_clifford_disentanglers(visualise=False):
 
     # Single qubit gates to sample from
     v_list = ["I", "W", "V"]
     v_pair_list = [[i, j] for i in v_list for j in v_list]
-    all_circuits = []
 
     # Class 1 - I
-    all_circuits.append(QuantumCircuit(2))
+    all_circuits = [QuantumCircuit(2)]
 
     # Class 2 - CNOT
     for v_pair in v_pair_list:
         qc_c2 = apply_v_pair(v_pair)
         qc_c2.cx(0, 1)
-        all_circuits.append(qc_c2.to_gate())
+        all_circuits.append(qc_c2) #.to_gate())
 
     # Class 3 - iSWAP
     for v_pair in v_pair_list:
         qc_c3 = apply_v_pair(v_pair)
         qc_c3.cx(1, 0)
         qc_c3.cx(0, 1)
-        all_circuits.append(qc_c3.to_gate())
+        all_circuits.append(qc_c3) #.to_gate())
 
     # Class 4 - SWAP
     qc_c4 = QuantumCircuit(2)
     qc_c4.cx(0, 1)
     qc_c4.cx(1, 0)
     qc_c4.cx(0, 1)
-    all_circuits.append(qc_c4.to_gate())
+    all_circuits.append(qc_c4) #.to_gate())
 
-    return all_circuits
+    # To gate
+    all_gates = []
+    for item in all_circuits:
+        if visualise:
+            item.draw(output="mpl", style="iqp")
+            plt.show()
+        all_gates.append(item.to_gate())
 
-def minimise_entanglement(psi, N, disentangling_gates, maxsweeps=5):
+    return all_gates
+
+def minimise_entanglement(psi, N, disentangling_gates, maxsweeps=10):
 
     # Definitions
     min_qc = QuantumCircuit(N)
 
     # Starting point of the minimisation
-    tol_EE = 1e-1
+    tol_EE = 1e-10
+    tol_convergence = 1e-5
     nsweeps, ntrials = 0, 0
-    no_change_count, no_change = 0, False
     EE = calculate_EE_gen(psi.data)
-
+    print('EE: ', EE)
     # Minimisation Sweep
-    while EE > tol_EE and nsweeps < maxsweeps and not no_change:
-
-        # Parameters of the minimisation sweep
-        rev = bool(nsweeps % 2)
-        has_changed = False
-
+    rev = False
+    while EE > tol_EE and nsweeps < maxsweeps:
+        print('another sweep with rev', rev)
         # Sweep over all qubits
         for n in range(0, N - 1):
 
@@ -338,7 +342,17 @@ def minimise_entanglement(psi, N, disentangling_gates, maxsweeps=5):
                 q1 = n + 1
 
             # Find the best disentangling circuit
+            print('q0: ', q0, 'q1: ', q1)
             EE_1qb = calculate_EE_sweep(psi, q0, rev)
+            print('EE_cut: ', EE_1qb)
+            if EE_1qb < tol_EE:
+                continue
+
+            print('---------------')
+            print('q0: ', q0, 'q1: ', q1)
+            print('EE_cut: ', EE_1qb)
+
+            minimizing_gate = QuantumCircuit(N)
             for gate_idx, gate in enumerate(disentangling_gates):
 
                 # Trial circuit
@@ -348,27 +362,32 @@ def minimise_entanglement(psi, N, disentangling_gates, maxsweeps=5):
                 # New entanglement entropy of the cut
                 psi_trial = psi.evolve(circuit)
                 EE_trial = calculate_EE_sweep(psi_trial, q0, rev)
+                # print('EE_trial:', EE_trial, 'E_1qb:', EE_1qb)
                 if EE_trial < EE_1qb:
+                    # print('Changed minimal value of EE')
                     EE_1qb = EE_trial
-                    minimizing_circuit = circuit
-                    has_changed = True
+                    minimizing_gate = circuit
+                    if EE_1qb < tol_EE:
+                        break
+
+                    # has_changed = True
 
             # Evolve with the minimising circuit
-            min_qc.compose(minimizing_circuit, inplace=True)
-            min_qc.draw(output="mpl", style="iqp")
-            plt.show()
-            psi = psi.evolve(minimizing_circuit)
-            EE = calculate_EE_gen(psi.data)
-            print(q0, q1, no_change)
-            ntrials += 1
+            min_qc.compose(minimizing_gate, inplace=True)
+            print('Minimising circuit up to :', q0, q1, rev)
+            print(min_qc.decompose())
+            psi = psi.evolve(minimizing_gate)
 
-        # Look for convergence
-        if not has_changed:
-            no_change_count += 1
-            if no_change_count > 1:
-                no_change = True
+        EE_new = calculate_EE_gen(psi.data)
+        print('Total EE: ', EE)
+        if np.abs(EE - EE_new) < tol_convergence:
+            break
+        else:
+            EE = EE_new
+        print('Total EE_new: ', EE)
+        rev = not rev
         nsweeps += 1
-
+        print(nsweeps, rev)
     return psi, min_qc
 
 def calculate_EE_sweep(psi, q0, rev=False):
@@ -395,11 +414,11 @@ def calculate_EE_gen(psi):
 
     # Definitions
     N = int(np.log2(len(psi)))
-    psi.shape = (2 ** N, 1)
+    psi_EE = psi.reshape(2 ** N, 1)
     S_cuts = []
 
     # Density matrix
-    rho = np.outer(psi, psi.conj())
+    rho = np.outer(psi_EE, psi_EE.conj())
     rho = rho.reshape([2] * 2 * N)
 
     # Entropy for the cut
