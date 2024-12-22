@@ -172,7 +172,6 @@ def calc_total_SRE1(psi):
     SRE1 = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
     return SRE1
 
-
 def calc_classical_SRE1(psi):
 
     # Preallocation
