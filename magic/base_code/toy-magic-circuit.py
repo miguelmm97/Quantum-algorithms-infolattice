@@ -36,7 +36,7 @@ info_dict = {}
 SRE1_dict = {}
 magic_dict = {}
 prob_dist = {}
-n_qubits = 4
+n_qubits = 5
 qc_w = QuantumCircuit(n_qubits)
 psi0_label = '0' * n_qubits
 psi0 = Statevector.from_label(psi0_label)
@@ -45,12 +45,12 @@ phi_z = np.pi / 4
 
 # qc_w.ry(phi_y, 0)
 # qc_w.ry(phi_y, 2)
-qc_w.h([0, 2])
-qc_w.cx(0, 1)
-qc_w.cx(2, 1)
-qc_w.h(3)
-qc_w.t(3)
-qc_w.t(1)
+# qc_w.h([0, 2])
+# qc_w.cx(0, 1)
+# qc_w.cx(2, 1)
+# qc_w.h(3)
+# qc_w.t(3)
+# qc_w.t(1)
 
 
 disentanglers = minimal_clifford_disentanglers()
@@ -65,9 +65,11 @@ magic_dict[0] = {key: info_dict[0][key] - SRE1_dict[0][key] for key in info_dict
 
 
 # qc_w.rz(phi_z, 0)
-qc_w.h(0)
-qc_w.cx(0, 1)
-qc_w.t(2)
+# qc_w.h(0)
+# qc_w.cx(0, 1)
+# qc_w.t(2)
+qc_w.h(np.arange(5))
+qc_w.rz(phi_z, [0, 1, 2])
 psi1 = psi0.evolve(qc_w)
 psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[1] = calc_info(psi1.data)
@@ -78,9 +80,12 @@ magic_dict[1] = {key: info_dict[1][key] - SRE1_dict[1][key] for key in info_dict
 # qc_w.rz(phi_z * 2, 0)
 # qc_w.ry(phi_y, 0)
 # qc_w.rz(phi_z, 0)
-qc_w.s(2)
-qc_w.cx(3, 2)
-qc_w.t(1)
+# qc_w.s(2)
+# qc_w.cx(3, 2)
+# qc_w.t(1)
+qc_w.cx(2, 1)
+qc_w.rz(phi_z, 1)
+qc_w.cx(1, 0)
 psi1 = psi0.evolve(qc_w)
 psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[2] =  calc_info(psi1.data)
@@ -90,11 +95,12 @@ magic_dict[2] = {key: info_dict[2][key] - SRE1_dict[2][key] for key in info_dict
 
 # qc_w.ry(phi_y, 1)
 # qc_w.rz(phi_z  *3, 1)
-qc_w.h(1)
-qc_w.cx(0, 1)
-qc_w.t(2)
-qc_w.t(0)
+# qc_w.h(1)
+# qc_w.cx(0, 1)
+# qc_w.t(2)
+# qc_w.t(0)
 # qc_w.cx(1, 2)
+qc_w.rz(phi_z, 0)
 psi1 = psi0.evolve(qc_w)
 psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[3] =  calc_info(psi1.data)
@@ -106,10 +112,10 @@ magic_dict[3] = {key: info_dict[3][key] - SRE1_dict[3][key] for key in info_dict
 # qc_w.rz(phi_z, 1)
 # qc_w.ry(phi_y, 0).inverse()
 # qc_w.ry(phi_y, 2).inverse()
-qc_w.h(2)
-qc_w.s(3)
-qc_w.cx(3, 2)
-qc_w.t(3)
+# qc_w.h(2)
+# qc_w.s(3)
+# qc_w.cx(3, 2)
+# qc_w.t(3)
 psi1 = psi0.evolve(qc_w)
 psi, _ = minimise_entanglement(psi1, n_qubits, disentanglers)
 info_dict[4] = calc_info(psi1.data)

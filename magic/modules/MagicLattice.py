@@ -161,17 +161,6 @@ def calc_all_Xi(psi):
 
     return prob_dist
 
-def calc_total_SRE1(psi):
-
-    # Preallocation
-    L = int(np.log2(psi.size))
-
-    # Stabilizer Renyi Entropy 1
-    prob_dist = Xi_pure(psi)
-    prob_dist[prob_dist < 1e-16] = 1e-22
-    SRE1 = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
-    return SRE1
-
 def calc_classical_SRE1(psi):
 
     # Preallocation
@@ -258,6 +247,19 @@ def plot_probabilities(prob_dist, num_qubits, fig):
             ax.set_ylabel('$\Xi$', fontsize='20')
             ax.set_xlabel('$\sigma$', fontsize='20')
 
+# Check if this function is even needed (deprecated for shannon(psi))
+def calc_total_SRE1(psi):
+
+    # Preallocation
+    L = int(np.log2(psi.size))
+
+    # Stabilizer Renyi Entropy 1
+    prob_dist = Xi_pure(psi)
+    prob_dist[prob_dist < 1e-16] = 1e-22
+    SRE1 = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
+    return SRE1
+
+
 
 # Minimising entanglement
 def apply_v_pair(v_pair):
@@ -325,6 +327,7 @@ def minimise_entanglement(psi, N, disentangling_gates, maxsweeps=10):
     nsweeps, ntrials = 0, 0
     EE = calculate_EE_gen(psi.data)
     print('EE: ', EE)
+
     # Minimisation Sweep
     rev = False
     while EE > tol_EE and nsweeps < maxsweeps:

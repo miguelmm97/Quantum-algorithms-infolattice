@@ -270,7 +270,6 @@ def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate
     ax.axis('off')
 
 
-
 def singlet(L):
     assert L%2 == 0
     if L//2 == 1:

@@ -87,24 +87,27 @@ for i in range(Nlayers):
     #     for qubit in operands:
     #         layer.t(qubit)
 
-        if i==0:
+        # if i==0:
             # layer.ry(phi_y, [1, 2])
             # layer.rz(phi_z, [1, 2])
-            layer.h(qubits)
-            layer.t([0, 1])
-            # layer.t(0)
+            # layer.h(qubits)
+            # layer.t([0, 1])
+            # layer.rz(np.pi/4, [0, 1, 2])
+            # layer.t([0, 1, 2])
             # layer.s(qubits)
         if i==1:
-            layer.cx(2, 1)
+            # layer.cx(2, 1)
+            # layer.rz(np.pi / 4, 1)
             # layer.t(1)
+            # layer.t(0)
+            layer.h(1)
             layer.cx(1, 0)
-            layer.t(0)
-            # layer.h(1)
 
             # layer.t(2)
             # layer.ry(phi_y, [1, 2])
 
         # if i==2:
+            # layer.rz(np.pi / 4,  0)
             # layer.cx(0, 1)
             # layer.cx(3, 2)
             # layer.cx(1, 2)
@@ -159,7 +162,7 @@ for key1 in info_dict.keys():
         value = max(info_dict[key1][key2])
         if value > max_value:
             max_value = value
-colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=1), cmap=color_map)
+colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)
 
 # Defining a colormap with negatives
 color_map_neg = plt.get_cmap('PuOr').reversed()
