@@ -267,14 +267,6 @@ def plot_lattice_from_circuit(circuit_list, psi0, fig, return_info=False, show_c
         pass
 
 
-
-
-
-
-
-
-
-
 # Random
 def kron_iter(L, up_position=0):
     """ Given a position returns |00...1...000...> in that position."""

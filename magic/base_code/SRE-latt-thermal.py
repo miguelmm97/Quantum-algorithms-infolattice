@@ -52,7 +52,7 @@ psi1 = Statevector.from_label(psi0_label)
 # Circuit parameters
 Nlayers = 100
 T_per_layer = 1
-min_layers, max_layers = 0, 0
+min_layers, max_layers = 0, 7
 seed_list = np.random.randint(0, 1000000, size=(Nlayers, ))
 qubits = list(range(n_qubits))
 disentanglers = minimal_clifford_disentanglers()
