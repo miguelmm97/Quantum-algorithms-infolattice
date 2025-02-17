@@ -36,20 +36,31 @@ sigma_x = np.array([[0, 1], [1, 0]], dtype=np.complex128)
 sigma_y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
 sigma_z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
 
+sigma_vec = [sigma_0, sigma_x, sigma_y, sigma_z]
+
 #%% Functions
+
+
+
+def spin(axis, site, L):
+    return 0.5 * np.kron(np.kron(np.eye(2 ** site), sigma_vec[axis]), np.eye(2 ** (L - site - 1)))
+
 
 def Hamiltonian_XYZ(L, Jx, Jy, Jz, D):
 
     d = int(2 ** L)
     H = np.zeros((d, d), dtype=np.complex128)
-
+    H1 = np.zeros((d, d), dtype=np.complex128)
     # XYZ terms
     for i in range(L - 1):
-        d_left = int(2 ** i)
-        d_right = int(2 ** (L - i - 2))
-        H += - Jx * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_x), sigma_x), np.eye(d_right))
-        H += - Jy * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_y), sigma_y), np.eye(d_right))
-        H += - Jz * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_z), sigma_z), np.eye(d_right))
+        H += - Jx * spin(1, i, L) @ spin(1, i + 1, L) + \
+             - Jy * spin(2, i, L) @ spin(2, i + 1, L) +\
+             - Jz * spin(3, i, L) # @ spin(3, i + 1, L)
+        # d_left = int(2 ** i)
+        # d_right = int(2 ** (L - i - 2))
+        # H1 += - Jx * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_x), sigma_x), np.eye(d_right))
+        # H1 += - Jy * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_y), sigma_y), np.eye(d_right))
+        # H1 += - Jz * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_z), sigma_z), np.eye(d_right))
 
     # Single ion anisotropy term
     H += D * (1/4) * L * np.eye(d)

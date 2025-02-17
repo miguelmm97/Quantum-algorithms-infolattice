@@ -9,8 +9,8 @@ import numpy as np
 from scipy.linalg import eigvalsh as scipy_eigvalsh
 from numpy.linalg import eigvalsh as numpy_eigvalsh
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap, Normalize
-from matplotlib import colorbar
+from matplotlib.colors import Normalize
+
 
 
 def reshape_psi(psi, n, l):

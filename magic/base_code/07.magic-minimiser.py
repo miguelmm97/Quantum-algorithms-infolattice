@@ -1,15 +1,5 @@
 #%% Imports
 
-# Managing data
-import os
-import sys
-import h5py
-from datetime import date
-
-# Imports from Qiskit
-from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
-
 # Information lattice and functions
 from modules.InfoLattice import calc_info, plot_info_latt
 from modules.MagicLattice import minimal_clifford_disentanglers, minimise_entanglement, calc_classical_magic, \

@@ -1,22 +1,11 @@
 
 # Math
 import numpy as np
-from itertools import product
-
-# Plotting
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-from matplotlib.colors import LinearSegmentedColormap, Normalize
-from matplotlib import cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.gridspec import GridSpec
 
 # Qiskit
-from qiskit.circuit import QuantumRegister, ClassicalRegister, QuantumCircuit
-from qiskit.quantum_info import Pauli
-from qiskit.circuit.library.standard_gates import HGate, SGate, TGate, CXGate
+from qiskit.circuit import QuantumRegister, QuantumCircuit
+from qiskit.circuit.library.standard_gates import HGate, SGate, CXGate
 from qiskit.circuit.exceptions import CircuitError
-from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
 
 # Managing logging
 import logging
@@ -26,10 +15,6 @@ from colorlog import ColoredFormatter
 # Managing data
 import os
 import h5py
-
-# Modules
-# from InfoLattice import calc_info, plot_info_latt
-# from MagicLattice import calc_classical_magic, calc_all_Xi
 
 
 # %% Logging setup
@@ -165,152 +150,6 @@ def random_clifford_circuit(num_qubits, depth, max_operands=2, seed=None):
         qc.barrier()
     return qc
 
-def stabiliser_Renyi_entropy_pure(state, n, num_qubits):
-
-    # Pauli strings
-    pauli_strings = []
-    pauli_iter = product('IXYZ', repeat=num_qubits)
-    for element in pauli_iter:
-        pauli_strings.append(''.join(element))
-
-    # Probability distribution
-    rho = DensityMatrix(state).data
-    prob_dist = np.zeros((len(pauli_strings), ))
-    for i, pauli_string in enumerate(pauli_strings):
-        P = Pauli(pauli_string).to_matrix()
-        prob_dist[i] = (np.abs(np.trace(rho @ P)) ** 2) / (2 ** num_qubits)
-
-    # Renyi entropy
-    Mn_rho = (1 / (1 - n)) * np.log(np.sum(prob_dist ** n)) - np.log(2 ** num_qubits)
-    return Mn_rho
-
-def stabiliser_Renyi_entropy_mixed(rho, num_qubits):
-
-    # Pauli strings
-    pauli_strings = []
-    pauli_iter = product('IXYZ', repeat=num_qubits)
-    for element in pauli_iter:
-        pauli_strings.append(''.join(element))
-
-    # Probability distribution
-    Tr_rhoP = np.zeros((len(pauli_strings),))
-    for i, pauli_string in enumerate(pauli_strings):
-        P = Pauli(pauli_string).to_matrix()
-        Tr_rhoP[i] = np.abs(np.trace(rho @ P))
-
-    # Renyi entropy
-    M2_rho = - np.log(np.sum(Tr_rhoP ** 4) / np.sum(Tr_rhoP ** 2))
-    return M2_rho
-
-def non_integer_magic(info_lattice):
-
-    magic = 0
-    for scale in info_lattice.keys():
-        for info in info_lattice[scale]:
-            magic += np.abs(info - round(info))
-    return magic
-
-def plot_lattice_from_circuit(circuit_list, psi0, fig, return_info=False, show_circuit=False):
-
-    # Definitions
-    qc = QuantumCircuit(np.int(np.log2(psi0.data)))
-    info_latt = {}
-    SRE1_latt = {}
-    if return_info:
-        prob_dist = {}
-
-    # Calculation of information and magic at each circuit step
-    psi_t = psi0
-    for i, step in enumerate(circuit_list):
-        psi_t = psi_t.evolve(step).data
-        info_latt[i] = calc_info(psi_t)
-        SRE1_latt[i] = calc_classical_magic(psi_t)
-        qc.compose(circuit_list[i], inplace=True)
-        if return_info:
-            prob_dist[i] = calc_all_Xi(psi_t)
-
-
-    # Plotting
-    color_map = plt.get_cmap("PuOr").reversed()
-    colors = color_map(np.linspace(0, 1, 41)[20:])
-    colors[0] = [1, 1, 1, 1]
-    color_map = LinearSegmentedColormap.from_list("custom_colormap", colors)
-    max_value = 2.
-    colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)
-
-    # Figure
-    Ncol = len(circuit_list) % 10
-    Nrow = 1 + (len(circuit_list) // 10)
-    gs = GridSpec(2 * Nrow, Ncol + 1, figure=fig, hspace=0, wspace=0.1)
-    for i in range(len(circuit_list)):
-        column = i % 10
-        row = (i // 10)
-        ax1 = fig.add_subplot(gs[row, column])
-        ax2 = fig.add_subplot(gs[row + Nrow, column])
-        plot_info_latt(info_latt[i], ax1, color_map, max_value=max_value, indicate_ints=True)
-        plot_info_latt(SRE1_latt[i], ax2, color_map, max_value=max_value, indicate_ints=True)
-
-    # Colorbar
-    cbar_ax = fig.add_subplot(gs[0, -1])
-    divider = make_axes_locatable(cbar_ax)
-    cax = divider.append_axes("left", size="10%", pad=0)
-    cbar = fig.colorbar(colormap, cax=cax, orientation='vertical')
-    cbar_ax.set_axis_off()
-    cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
-
-    if show_circuit:
-        qc.draw(output="mpl", style="iqp")
-
-    if return_info:
-        return info_latt, SRE1_latt, prob_dist
-    else:
-        pass
-
-
-# Random
-def kron_iter(L, up_position=0):
-    """ Given a position returns |00...1...000...> in that position."""
-    if L == 1:
-        if up_position == L-1:
-            return spinup()
-        else:
-            return spindown()
-    else:
-        if up_position == L-1:
-            return np.kron(kron_iter(L - 1, up_position), spinup())
-        else:
-            return np.kron(kron_iter(L - 1, up_position), spindown())
-
-def w_state_n(n):
-    """ Creates a W-state of order n: |100...> + |010...> + ... """
-    state = np.zeros(2**n, dtype=float)
-    for i in range(n):
-        state += kron_iter(n, i)
-    state /= np.sqrt(n)
-    return state
-
-def wn_in_chain(L, n):
-    """ The first n elements of this chain are W-like entangled."""
-    assert L >= n
-    if L == n:
-        return w_state_n(n)
-    else:
-        return np.kron(wn_in_chain(L - 1, n), spindown())
-
-def random_wn_state(n, k):
-    order = np.random.default_rng().permutation(n)
-    L = len(order)
-    psi = wn_in_chain(L, k)
-    psi = np.transpose(np.reshape(psi, [2] * L), axes=np.argsort(order))
-    return psi.flatten()
-
-def spinup():
-    return np.array([1, 0])
-
-def spindown():
-    return np.array([0, 1])
-
-
 # Managing data
 def get_fileID(file_list, common_name='datafile'):
     expID = 0
@@ -393,8 +232,48 @@ def store_my_dict(file, dict):
         except Exception as ex:
             logger_functions.warning(f'Failed to write key {key} in {file} because of exception: {ex}')
 
+# Random
+def kron_iter(L, up_position=0):
+    """ Given a position returns |00...1...000...> in that position."""
+    if L == 1:
+        if up_position == L-1:
+            return spinup()
+        else:
+            return spindown()
+    else:
+        if up_position == L-1:
+            return np.kron(kron_iter(L - 1, up_position), spinup())
+        else:
+            return np.kron(kron_iter(L - 1, up_position), spindown())
 
+def w_state_n(n):
+    """ Creates a W-state of order n: |100...> + |010...> + ... """
+    state = np.zeros(2**n, dtype=float)
+    for i in range(n):
+        state += kron_iter(n, i)
+    state /= np.sqrt(n)
+    return state
 
+def wn_in_chain(L, n):
+    """ The first n elements of this chain are W-like entangled."""
+    assert L >= n
+    if L == n:
+        return w_state_n(n)
+    else:
+        return np.kron(wn_in_chain(L - 1, n), spindown())
+
+def random_wn_state(n, k):
+    order = np.random.default_rng().permutation(n)
+    L = len(order)
+    psi = wn_in_chain(L, k)
+    psi = np.transpose(np.reshape(psi, [2] * L), axes=np.argsort(order))
+    return psi.flatten()
+
+def spinup():
+    return np.array([1, 0])
+
+def spindown():
+    return np.array([0, 1])
 
 
 
