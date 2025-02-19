@@ -7,17 +7,22 @@ import h5py
 from datetime import date
 
 # Imports from Qiskit
-from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector
 
 import numpy as np
 from numpy import pi
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib import cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 # Information lattice and functions
 from modules.functions import *
 from modules.xyz_model import Hamiltonian_XYZ, spin
 from modules.InfoLattice import calc_info, plot_info_latt
-from modules.MagicLattice import calc_classical_magic, calc_total_info, minimal_clifford_disentanglers, minimise_entanglement
+from modules.MagicLattice import calc_SRE1_lattice, calc_total_info, minimal_clifford_disentanglers, minimise_entanglement
 
 #%% Logging setup
 loger_main = logging.getLogger('main')
@@ -46,11 +51,11 @@ loger_main.addHandler(stream_handler)
 
 #%% Parameters
 
-Jx = 100
-Jy = 0
-Jz = 0
-D = 0
-L = 6
+Jx = -1
+Jy = -1
+Jz = -1
+D = 0.95
+L = 7
 
 #%% Main
 
@@ -59,16 +64,16 @@ H = Hamiltonian_XYZ(L, Jx, Jy, Jz, D)
 evals, evecs = np.linalg.eigh(H)
 print(evals[0], evals[1])
 
-gs_qiskit = Statevector(evecs[:, 0])
-info_gs = calc_info(evecs[:, 0])
-info_gs2 = calc_info(evecs[:, 1])
-sre1_gs = calc_classical_magic(evecs[:, 0])
-sre1_gs2 = calc_classical_magic(evecs[:, 1])
-
-disentanglers = minimal_clifford_disentanglers()
-psi_min, _ = minimise_entanglement(gs_qiskit, L, disentanglers)
-SRE1_infolatt_min = calc_classical_magic(psi_min.data)
-VN_infolatt_min = calc_info(psi_min.data)
+# gs_qiskit = Statevector(evecs[:, 0])
+# info_gs = calc_info(evecs[:, 1])
+# info_gs2 = calc_info(evecs[:, 1])
+# sre1_gs = calc_SRE1_lattice(evecs[:, 0])
+# sre1_gs2 = calc_SRE1_lattice(evecs[:, 1])
+#
+# disentanglers = minimal_clifford_disentanglers()
+# psi_min, _ = minimise_entanglement(gs_qiskit, L, disentanglers)
+# SRE1_infolatt_min = calc_SRE1_lattice(psi_min.data)
+# VN_infolatt_min = calc_info(psi_min.data)
 
 
 
@@ -90,10 +95,10 @@ colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)  # 
 fig1 = plt.figure(figsize=(8, 6))
 gs = GridSpec(1, 2, figure=fig1, hspace=0.5)
 ax0 = fig1.add_subplot(gs[0, 0])
-ax1 = fig1.add_subplot(gs[0, 1])
+# ax1 = fig1.add_subplot(gs[0, 1])
 fig1.suptitle('Info')
-plot_info_latt(info_gs, ax0, color_map, indicate_ints=True, max_value=2)
-plot_info_latt(VN_infolatt_min, ax1, color_map, indicate_ints=True, max_value=2)
+# plot_info_latt(info_gs, ax0, color_map, indicate_ints=True, max_value=2)
+# plot_info_latt(VN_infolatt_min, ax1, color_map, indicate_ints=True, max_value=2)
 
 cbar_ax = fig1.add_subplot(gs[-1, :])
 divider = make_axes_locatable(cbar_ax)
@@ -110,20 +115,20 @@ ax0.plot(np.arange(len(evals)), evals, 'ob')
 
 
 #
+# #
+# fig3 = plt.figure(figsize=(8, 6))
+# gs = GridSpec(1, 2, figure=fig3, hspace=0.5)
+# ax0 = fig3.add_subplot(gs[0, 0])
+# ax1 = fig3.add_subplot(gs[0, 1])
+# plot_info_latt(sre1_gs, ax0, color_map, indicate_ints=True , max_value=2)
+# plot_info_latt(SRE1_infolatt_min, ax1, color_map, indicate_ints=True, max_value=2)
+# fig3.suptitle('SRE1')
 #
-fig3 = plt.figure(figsize=(8, 6))
-gs = GridSpec(1, 2, figure=fig3, hspace=0.5)
-ax0 = fig3.add_subplot(gs[0, 0])
-ax1 = fig3.add_subplot(gs[0, 1])
-plot_info_latt(sre1_gs, ax0, color_map, indicate_ints=True , max_value=2)
-plot_info_latt(SRE1_infolatt_min, ax1, color_map, indicate_ints=True, max_value=2)
-fig3.suptitle('SRE1')
-
-cbar_ax = fig3.add_subplot(gs[-1, :])
-divider = make_axes_locatable(cbar_ax)
-cax = divider.append_axes("bottom", size="5%", pad=0)
-cbar = fig3.colorbar(colormap, cax=cax, orientation='horizontal')
-cbar_ax.set_axis_off()
-cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
+# cbar_ax = fig3.add_subplot(gs[-1, :])
+# divider = make_axes_locatable(cbar_ax)
+# cax = divider.append_axes("bottom", size="5%", pad=0)
+# cbar = fig3.colorbar(colormap, cax=cax, orientation='horizontal')
+# cbar_ax.set_axis_off()
+# cbar.set_label(label='$i_n^l$', labelpad=10, fontsize=20)
 plt.show()
 
