@@ -51,9 +51,9 @@ loger_main.addHandler(stream_handler)
 
 #%% Parameters
 
-theta = pi / 2
+theta = pi / 8
 L = 6
-
+disentanglers = minimal_clifford_disentanglers()
 #%% Main
 
 # Spectrum
@@ -64,6 +64,9 @@ print(evals[0], evals[1])
 # Info Lattice
 info_gs = calc_info(evecs[:, 0])
 sre1_gs = calc_SRE1_lattice(evecs[:, 0])
+gs_qiskit = Statevector(evecs[:, 0])
+psi_min, _ = minimise_entanglement(gs_qiskit, L, disentanglers)
+sre1_gs_min = calc_SRE1_lattice(psi_min.data)
 
 
 # Format
@@ -82,14 +85,17 @@ colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)  # 
 
 
 fig1 = plt.figure(figsize=(8, 6))
-gs = GridSpec(1, 2, figure=fig1, hspace=0.5)
+gs = GridSpec(1, 3, figure=fig1, hspace=0.5)
 ax0 = fig1.add_subplot(gs[0, 0])
 ax1 = fig1.add_subplot(gs[0, 1])
+ax2 = fig1.add_subplot(gs[0, 2])
 
 ax0.set_title('Info')
 plot_info_latt(info_gs, ax0, color_map, indicate_ints=True, max_value=2, tol_ints=1e-8)
 ax1.set_title(f'SRE1, total info = {calc_total_info(sre1_gs) :.2f}')
 plot_info_latt(sre1_gs, ax1, color_map, indicate_ints=True, max_value=2, tol_ints=1e-8)
+ax2.set_title(f'SRE1 minimised, total info = {calc_total_info(sre1_gs) :.2f}')
+plot_info_latt(sre1_gs_min, ax2, color_map, indicate_ints=True, max_value=2, tol_ints=1e-8)
 
 
 cbar_ax = fig1.add_subplot(gs[-1, :])

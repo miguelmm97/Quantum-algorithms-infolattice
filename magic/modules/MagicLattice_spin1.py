@@ -18,7 +18,7 @@ from matplotlib.gridspec import GridSpec
 def Xi_pure(psi: np.ndarray) -> dict:
 
     # Pauli strings
-    L = int(np.log2(psi.shape))
+    L = int(np.emath.logn(3, psi.shape))
     pauli_strings = []
     pauli_iter = product('IXYZ', repeat=L)
     for element in pauli_iter:
@@ -29,7 +29,7 @@ def Xi_pure(psi: np.ndarray) -> dict:
     rho = DensityMatrix(psi).data
     for i, pauli_string in enumerate(pauli_strings):
         P = Pauli(pauli_string).to_matrix()
-        prob_dist[pauli_string] = (np.abs(np.trace(rho @ P)) ** 2) / (2 ** L)
+        prob_dist[pauli_string] = (np.abs(np.trace(rho @ P)) ** 2) / (3 ** L)
 
     return prob_dist
 
@@ -48,7 +48,7 @@ def calc_Xi_all_subsystems(psi: np.ndarray) -> dict:
 
     # Preallocation
     full_prob = Xi_pure(psi)
-    L = int(np.log2(psi.size))
+    L = int(np.emath.logn(3, psi.size))
     prob_dist = {}
 
     for l in range(1, L + 1):
@@ -71,7 +71,7 @@ def calc_SRE1_all_subsystems(psi: np.ndarray) -> dict[np.ndarray]:
 
     # Preallocation
     full_prob = Xi_pure(psi)
-    L = int(np.log2(psi.size))
+    L = int(np.emath.logn(3, psi.size))
     SRE1 = {}
 
     for l in range(1, L + 1):
@@ -89,7 +89,7 @@ def calc_SRE1_all_subsystems(psi: np.ndarray) -> dict[np.ndarray]:
 
             # Shannon entropy
             prob_dist[prob_dist < 1e-16] = 1e-22
-            shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - l * np.log2(2)
+            shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - l * np.log2(3)
             SRE1[l].append(shannon_entropy)
 
         SRE1[l] = np.array(SRE1[l])
@@ -99,7 +99,7 @@ def calc_SRE1_lattice(psi: np.ndarray) -> dict[np.ndarray]:
 
     # Definition and preallocation
     assert len(psi.shape) == 1
-    L = int(np.log2(psi.size))
+    L = int(np.emath.logn(3, psi.size))
     SRE1 = calc_SRE1_all_subsystems(psi)
     magic_latt = {}
 
@@ -121,10 +121,10 @@ def calc_total_info(SRE1_latt) -> float:
     return total_info
 
 def calc_SRE1_pure(psi: np.ndarray) -> float:
-    L = int(np.log2(psi.size))
+    L = int(np.emath.logn(3, psi.size))
     prob_dist = np.array(list(Xi_pure(psi).values()))
     prob_dist[prob_dist < 1e-16] = 1e-22
-    shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
+    shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(3)
     return shannon_entropy
 
 def plot_probabilities(prob_dist, num_qubits, fig) -> None:
@@ -151,26 +151,6 @@ def plot_probabilities(prob_dist, num_qubits, fig) -> None:
             ax.set_ylim(bottom=0)
             ax.set_ylabel('$\Xi$', fontsize='20')
             ax.set_xlabel('$\sigma$', fontsize='20')
-
-def measurement_outcome_shannon(psi):
-
-    L = int(np.log2(psi.size))
-    pauli_strings = []
-    pauli_iter = product('IXYZ', repeat=L)
-    for element in pauli_iter:
-        pauli_strings.append(''.join(element))
-    Id = 'I' * L
-    pauli_strings.remove(Id)
-
-    shannon_entropies = np.zeros((len(pauli_strings), ))
-    for i, pauli in enumerate(pauli_strings):
-        P = Pauli(pauli).to_matrix()
-        _, eigenvecs = np.linalg.eigh(P)
-        scalar_prod = psi.T.conj() @ eigenvecs
-        measurement_probs = scalar_prod.conj() * scalar_prod
-        measurement_probs[measurement_probs < 1e-16] = 1e-22
-        shannon_entropies[i] = - measurement_probs @ np.log2(measurement_probs)
-    return shannon_entropies, pauli_strings
 
 
 # Minimising entanglement

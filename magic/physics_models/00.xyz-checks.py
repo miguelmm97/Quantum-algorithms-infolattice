@@ -21,7 +21,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # Information lattice and functions
 from modules.functions import *
 from modules.xyz_model import Hamiltonian_XYZ, spin
-from modules.InfoLattice import calc_info, plot_info_latt
+from modules.InfoLattice_spin1 import calc_info, plot_info_latt
 from modules.MagicLattice import calc_SRE1_lattice, calc_total_info, minimal_clifford_disentanglers, minimise_entanglement
 
 #%% Logging setup
@@ -53,9 +53,9 @@ loger_main.addHandler(stream_handler)
 
 Jx = -1
 Jy = -1
-Jz = -1
-D = 0.95
-L = 7
+Jz = +20
+D = 0.1
+L = 6
 
 #%% Main
 
@@ -65,8 +65,8 @@ evals, evecs = np.linalg.eigh(H)
 print(evals[0], evals[1])
 
 # gs_qiskit = Statevector(evecs[:, 0])
-# info_gs = calc_info(evecs[:, 1])
-# info_gs2 = calc_info(evecs[:, 1])
+info_gs = calc_info(evecs[:, 0])
+info_gs2 = calc_info(evecs[:, 1])
 # sre1_gs = calc_SRE1_lattice(evecs[:, 0])
 # sre1_gs2 = calc_SRE1_lattice(evecs[:, 1])
 #
@@ -95,9 +95,10 @@ colormap = cm.ScalarMappable(norm=Normalize(vmin=0, vmax=2), cmap=color_map)  # 
 fig1 = plt.figure(figsize=(8, 6))
 gs = GridSpec(1, 2, figure=fig1, hspace=0.5)
 ax0 = fig1.add_subplot(gs[0, 0])
-# ax1 = fig1.add_subplot(gs[0, 1])
+ax1 = fig1.add_subplot(gs[0, 1])
 fig1.suptitle('Info')
-# plot_info_latt(info_gs, ax0, color_map, indicate_ints=True, max_value=2)
+plot_info_latt(info_gs, ax0, color_map, indicate_ints=True, max_value=2)
+plot_info_latt(info_gs2, ax1, color_map, indicate_ints=True, max_value=2)
 # plot_info_latt(VN_infolatt_min, ax1, color_map, indicate_ints=True, max_value=2)
 
 cbar_ax = fig1.add_subplot(gs[-1, :])

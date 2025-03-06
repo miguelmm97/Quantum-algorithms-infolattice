@@ -46,32 +46,35 @@ def spin(axis, site, L):
     return prefactor * np.kron(np.kron(np.eye(3 ** site), sigma_vec[axis]), np.eye(3 ** (L - site - 1)))
 
 
-def Hamiltonian_XYZ(L, Jx, Jy, Jz, D):
+def Hamiltonian_XYZ(L, Jx, Jy, Jz, D, boundary='Twisted'):
 
     d = int(3 ** L)
     H = np.zeros((d, d), dtype=np.complex128)
-    # H1 = np.zeros((d, d), dtype=np.complex128)
-    # XYZ terms
-    for i in range(L - 1):
-        H += + Jx * spin(1, i, L) @ spin(1, i + 1, L) + \
-             + Jy * spin(2, i, L) @ spin(2, i + 1, L) +\
-             + Jz * spin(3, i, L) @ spin(3, i + 1, L)
 
+    # Spin-spin terms
+    if boundary == 'Open':
+        for i in range(L - 1):
+            H += + Jx * spin(1, i, L) @ spin(1, i + 1, L) + \
+                 + Jy * spin(2, i, L) @ spin(2, i + 1, L) +\
+                 + Jz * spin(3, i, L) @ spin(3, i + 1, L)
+
+    if boundary == 'Twisted':
+        for i in range(L):
+            sign_x = -1 if i==L else 1
+            sign_y = -1 if i==L else 1
+            H += + Jx * sign_x * spin(1, i, L) @ spin(1, (i + 1) % L, L) + \
+                 + Jy * sign_y * spin(2, i, L) @ spin(2, (i + 1) % L, L) +\
+                 + Jz * spin(3, i, L) @ spin(3, (i + 1) % L, L)
+
+    # Ion anisotropy
     for i in range(L):
         H += D * spin(3, i, L) @ spin(3, i, L)
+        # print(np.allclose(spin(3, i, L) @ spin(3, i, L), np.eye(d)))
+        # print(spin(3, i, L) @ spin(3, i, L))
 
-        # d_left = int(2 ** i)
-        # d_right = int(2 ** (L - i - 2))
-        # H1 += - Jx * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_x), sigma_x), np.eye(d_right))
-        # H1 += - Jy * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_y), sigma_y), np.eye(d_right))
-        # H1 += - Jz * (1/4) * np.kron(np.kron(np.kron(np.eye(d_left), sigma_z), sigma_z), np.eye(d_right))
-
-    # Single ion anisotropy term
-    # H += D * (1/4) * L * np.eye(d)
-
-    T = np.eye(1)
-    for i in range(L):
-        T = np.kron(T, 1j * sigma_y)
-    print(np.allclose(H, T @ np.conj(H) @ T.T.conj()))
+    # T = np.eye(1)
+    # for i in range(L):
+    #     T = np.kron(T, 1j * sigma_y)
+    # print(np.allclose(H, T @ np.conj(H) @ T.T.conj()))
 
     return H
