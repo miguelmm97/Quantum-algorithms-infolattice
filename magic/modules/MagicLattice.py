@@ -1,21 +1,39 @@
 import numpy as np
-from qiskit.quantum_info import DensityMatrix, partial_trace
 from itertools import product
+from functools import reduce
+
+
+from qiskit.quantum_info import DensityMatrix, partial_trace
 from qiskit.quantum_info import Pauli
 from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Statevector
-
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec
 
 
+#%% Pauli matrix tools
+sigma_0 = np.eye(2, dtype=np.complex128)
+sigma_x = np.array([[0, 1], [1, 0]], dtype=np.complex128)
+sigma_y = np.array([[0, -1j], [1j, 0]], dtype=np.complex128)
+sigma_z = np.array([[1, 0], [0, -1]], dtype=np.complex128)
+
+_, eigvec_x = np.linalg.eig(sigma_x)
+_, eigvec_y = np.linalg.eig(sigma_y)
+_, eigvec_z = np.linalg.eig(sigma_z)
+
+projectors = {
+    'X': {'+': np.outer(eigvec_x[:, 0], eigvec_x[:, 0].conj()), '-': np.outer(eigvec_x[:, 1], eigvec_x[:, 1].conj())},
+    'Y': {'+': np.outer(eigvec_y[:, 0], eigvec_y[:, 0].conj()), '-': np.outer(eigvec_y[:, 1], eigvec_y[:, 1].conj())},
+    'Z': {'+': np.outer(eigvec_z[:, 0], eigvec_z[:, 0].conj()), '-': np.outer(eigvec_z[:, 1], eigvec_z[:, 1].conj())}
+}
+
 #%% Functions
 
 
 # SRE1 Lattice
-def Xi_pure(psi: np.ndarray) -> dict:
+def Xi_pure(psi: np.ndarray, remove_I=False) -> dict:
 
     # Pauli strings
     L = int(np.log2(psi.shape))
@@ -23,13 +41,19 @@ def Xi_pure(psi: np.ndarray) -> dict:
     pauli_iter = product('IXYZ', repeat=L)
     for element in pauli_iter:
         pauli_strings.append(''.join(element))
+    if remove_I:
+        Id = 'I' * L
+        pauli_strings.remove(Id)
+        norm = (2 ** L) - 1
+    else:
+        norm = 2 ** L
 
     # Probability distribution
     prob_dist = {}
     rho = DensityMatrix(psi).data
     for i, pauli_string in enumerate(pauli_strings):
         P = Pauli(pauli_string).to_matrix()
-        prob_dist[pauli_string] = (np.abs(np.trace(rho @ P)) ** 2) / (2 ** L)
+        prob_dist[pauli_string] = (np.abs(np.trace(rho @ P)) ** 2) / norm
 
     return prob_dist
 
@@ -120,11 +144,17 @@ def calc_total_info(SRE1_latt) -> float:
         total_info += np.sum(SRE1_latt[key])
     return total_info
 
-def calc_SRE1_pure(psi: np.ndarray) -> float:
+def calc_SRE1_pure(psi: np.ndarray, remove_I=False) -> float:
     L = int(np.log2(psi.size))
-    prob_dist = np.array(list(Xi_pure(psi).values()))
+
+    if remove_I:
+        prob_dist = np.array(list(Xi_pure(psi, remove_I=True).values()))
+        offset_STAB = 0
+    else:
+        prob_dist = np.array(list(Xi_pure(psi, remove_I=False).values()))
+        offset_STAB = L * np.log2(2)
     prob_dist[prob_dist < 1e-16] = 1e-22
-    shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - L * np.log2(2)
+    shannon_entropy = - np.sum(prob_dist * np.log2(prob_dist)) - offset_STAB
     return shannon_entropy
 
 def plot_probabilities(prob_dist, num_qubits, fig) -> None:
@@ -152,25 +182,44 @@ def plot_probabilities(prob_dist, num_qubits, fig) -> None:
             ax.set_ylabel('$\Xi$', fontsize='20')
             ax.set_xlabel('$\sigma$', fontsize='20')
 
-def measurement_outcome_shannon(psi):
+def measurement_outcome_shannon(rho):
 
-    L = int(np.log2(psi.size))
+    L = int(np.log2(len(rho)))
     pauli_strings = []
-    pauli_iter = product('IXYZ', repeat=L)
+    pauli_iter = product('XYZ', repeat=L)
     for element in pauli_iter:
         pauli_strings.append(''.join(element))
-    Id = 'I' * L
-    pauli_strings.remove(Id)
+    # Id = 'I' * L
+    # pauli_strings.remove(Id)
 
     shannon_entropies = np.zeros((len(pauli_strings), ))
     for i, pauli in enumerate(pauli_strings):
+
+        list_projectors = []
+        for j in pauli:
+            list_projectors.append([projectors[j]['+'], projectors[j]['-']])
+
+        possible_projectors_tuple = product(list_projectors)
+        for element in possible_projectors_tuple:
+            print(element)
+
+        possible_projectors = [reduce(np.kron, projector) for projector in possible_projectors_tuple]
+
+
+
+
+
+
         P = Pauli(pauli).to_matrix()
-        _, eigenvecs = np.linalg.eigh(P)
-        scalar_prod = psi.T.conj() @ eigenvecs
-        measurement_probs = scalar_prod.conj() * scalar_prod
-        measurement_probs[measurement_probs < 1e-16] = 1e-22
+        _, vecs = np.linalg.eigh(P)
+        measurement_probs = np.array([np.trace(rho @ np.outer(vecs[:, i], vecs[:, i].T.conj())) for i in range(2**L)])
+        measurement_probs[measurement_probs< 1e-16] = 1e-22
         shannon_entropies[i] = - measurement_probs @ np.log2(measurement_probs)
+
     return shannon_entropies, pauli_strings
+
+
+
 
 
 # Minimising entanglement

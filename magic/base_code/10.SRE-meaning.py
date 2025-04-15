@@ -8,7 +8,7 @@ from datetime import date
 
 # Imports from Qiskit
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector
+from qiskit.quantum_info import Statevector, DensityMatrix
 
 import numpy as np
 from numpy import pi
@@ -54,23 +54,44 @@ loger_main.addHandler(stream_handler)
 theta = np.linspace(0, pi, 101)
 phi = [0] # np.linspace(0, 2 * pi, 11)
 index = [p for p in product(np.arange(len(theta)), np.arange(len(phi)))]
-
-SRE1 = np.zeros((len(index), ))
-SVN = np.zeros((len(index), ))
-shannon_measurement = np.zeros((len(index), 4 - 1))
-psi0_1 = Statevector.from_label('0')
 #
+# SRE1_1q = np.zeros((len(index), ))
+# SVN = np.zeros((len(index), ))
+# shannon_measurement_1q = np.zeros((len(index), 4 - 1))
+# psi0_1 = Statevector.from_label('0')
+# #
+# for i, indices in enumerate(index):
+#     loger_main.info(f'Calculating state {i}/ {len(index) - 1}')
+#     circuit_1q = QuantumCircuit(1)
+#     circuit_1q.ry(theta[indices[0]], 0)
+#     circuit_1q.rz(phi[indices[1]], 0)
+#     SRE1_1q[i] = calc_SRE1_pure(psi0_1.evolve(circuit_1q).data, remove_I=False)
+#     # SVN[i]  = S_vN(psi0_1.evolve(circuit_1q).data)
+#     evolved_density = DensityMatrix(psi0_1.evolve(circuit_1q)).data
+#     shannon_measurement_1q[i, :] = measurement_outcome_shannon(evolved_density)[0]
+
+
+# Two-qubit case
+theta1 = np.linspace(0, pi, 101)
+theta2 = 0
+SRE1_2q = np.zeros((len(index), ))
+shannon_measurement_2q = np.zeros((len(index), 3 ** 2))
+
+circuit0 = QuantumCircuit(2)
+circuit0.ry(theta2, 1)
+psi0_2q = Statevector.from_label('00').evolve(circuit0)
 for i, indices in enumerate(index):
     loger_main.info(f'Calculating state {i}/ {len(index) - 1}')
-    circuit_1q = QuantumCircuit(1)
-    circuit_1q.ry(theta[indices[0]], 0)
-    circuit_1q.rz(phi[indices[1]], 0)
-    SRE1[i] = calc_SRE1_pure(psi0_1.evolve(circuit_1q).data)
+    circuit_2q = QuantumCircuit(2)
+    circuit_2q.ry(theta[indices[0]], 1)
+    SRE1_2q[i] = calc_SRE1_pure(psi0_2q.evolve(circuit_2q).data, remove_I=False)
     # SVN[i]  = S_vN(psi0_1.evolve(circuit_1q).data)
-    shannon_measurement[i, :] = measurement_outcome_shannon(psi0_1.evolve(circuit_1q).data)[0]
+    evolved_density = DensityMatrix(psi0_2q.evolve(circuit_2q)).data
+    shannon_measurement_2q[i, :] = measurement_outcome_shannon(evolved_density)[0]
+
 
 # circuit_1q = QuantumCircuit(1)
-# circuit_1q.rx(pi/4, 0)
+# circuit_1q.ry(pi/4, 0)
 # psi = psi0_1.evolve(circuit_1q).data
 # SRE1 = calc_SRE1_pure(psi)
 # shannon_measurement, strings = measurement_outcome_shannon(psi)
@@ -83,17 +104,37 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
 color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
+marker_list = np.tile(['s', 'd', 'o', '*', '^', 'x', '+'], 3)
 fontsize=15
 
 
-# Plot the heatmap
 fig1 = plt.figure(figsize=(8, 6))
 gs = GridSpec(1, 1, figure=fig1, hspace=0.5)
 ax0 = fig1.add_subplot(gs[0, 0])
 
 # ax0.plot(np.arange(len(index)), SVN, color='Blue', marker='o', label='$S_{VN}$')
-ax0.plot(np.arange(len(index)), 1 - SRE1, color='Blue', marker='s', label='$SRE1$')
-for i in range(len(shannon_measurement[0, :])):
-    ax0.plot(np.arange(len(index)), 1 - shannon_measurement[:, i], marker='', linestyle='dashed')
+ax0.plot(theta, 1 - SRE1_1q, color='Blue', marker='s', label='$SRE1$')
+for i in range(len(shannon_measurement_1q[0, :])):
+    ax0.plot(theta, 1 - shannon_measurement_1q[:, i], marker='', linestyle='dashed')
+ax0.set_xticks([0, pi/4,  pi/2, 3 * pi /4, pi], ['$0$', '$\\pi/4$', '$\\pi/2$', '$3\\pi/4$',  '$\\pi$'])
+ax0.set_title('1 qubit comparison')
 
+
+fig2 = plt.figure(figsize=(8, 6))
+gs = GridSpec(1, 1, figure=fig2, hspace=0.5)
+ax0 = fig2.add_subplot(gs[0, 0])
+
+pauli_strings = []
+pauli_iter = product('XYZ', repeat=2)
+for element in pauli_iter:
+    pauli_strings.append(''.join(element))
+
+
+# ax0.plot(np.arange(len(index)), SVN, color='Blue', marker='o', label='$S_{VN}$')
+ax0.plot(theta, 2 - SRE1_2q, marker='s', label='$SRE1$', markerfacecolor='none', markeredgecolor='Blue', linestyle='None')
+for i in range(len(shannon_measurement_2q[0, :])):
+    ax0.plot(theta, 2 - shannon_measurement_2q[:, i], marker=marker_list[i], linestyle='dashed', label=pauli_strings[i])
+ax0.set_xticks([0, pi/4,  pi/2, 3 * pi /4, pi], ['$0$', '$\\pi/4$', '$\\pi/2$', '$3\\pi/4$',  '$\\pi$'])
+ax0.set_title('2 qubit comparison')
+ax0.legend()
 plt.show()
