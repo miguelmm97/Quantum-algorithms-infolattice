@@ -1,5 +1,5 @@
 import numpy as np
-from itertools import product
+from itertools import product, combinations
 from functools import reduce
 
 
@@ -182,7 +182,43 @@ def plot_probabilities(prob_dist, num_qubits, fig) -> None:
             ax.set_ylabel('$\Xi$', fontsize='20')
             ax.set_xlabel('$\sigma$', fontsize='20')
 
-def measurement_outcome_shannon(rho):
+def measurement_outcome_allstab_shannon(rho):
+
+    # Stabilizer operators
+    L = int(np.log2(len(rho)))
+    pauli_strings = []
+    pauli_iter = product('XYZ', repeat=L)
+    for element in pauli_iter:
+        pauli_strings.append(''.join(element))
+    stab_operators, list_strings = get_all_stab_operators(pauli_strings, L)
+    shannon_entropies = np.zeros((len(stab_operators), ))
+
+    # Shannon entropy for all stabiliser operator
+    for i, operator in enumerate(stab_operators):
+        list_projectors = get_projectors(operator)
+        measurement_probs = np.array([np.trace(rho @ projector) for projector in list_projectors])
+        measurement_probs[measurement_probs< 1e-16] = 1e-22
+        shannon_entropies[i] = - measurement_probs @ np.log2(measurement_probs)
+
+    return shannon_entropies, list_strings
+
+def get_projectors(operator):
+    _, eigenvecs = np.linalg.eig(operator)
+    list_projectors = [np.outer(eigenvecs[:, i], eigenvecs[:, i].conj()) for i in range(len(eigenvecs[:, 0]))]
+    return list_projectors
+
+def get_all_stab_operators(pauli_strings, num_qubits):
+    list_strings = list(combinations(pauli_strings, num_qubits)) + pauli_strings
+    pauli_matrices = [Pauli(string).to_matrix() for string in pauli_strings]
+    if num_qubits==1:
+        stab_operators = pauli_matrices
+    else:
+        list_generators = list(combinations(pauli_matrices, num_qubits))
+        list_stab_groups = list()
+        stab_operators = [(1 / num_qubits) * sum(generators) for generators in list_generators] + pauli_matrices
+    return stab_operators, list_strings
+
+def measurement_outcome_shannon_product(rho):
 
     L = int(np.log2(len(rho)))
     pauli_strings = []
@@ -208,8 +244,6 @@ def measurement_outcome_shannon(rho):
         shannon_entropies[i] = - measurement_probs @ np.log2(measurement_probs)
 
     return shannon_entropies, pauli_strings
-
-
 
 
 
