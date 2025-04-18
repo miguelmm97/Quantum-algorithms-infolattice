@@ -55,20 +55,20 @@ theta = np.linspace(0, pi, 101)
 phi = [0] # np.linspace(0, 2 * pi, 11)
 index = [p for p in product(np.arange(len(theta)), np.arange(len(phi)))]
 #
-# SRE1_1q = np.zeros((len(index), ))
-# SVN = np.zeros((len(index), ))
-# shannon_measurement_1q = np.zeros((len(index), 4 - 1))
-# psi0_1 = Statevector.from_label('0')
-# #
-# for i, indices in enumerate(index):
-#     loger_main.info(f'Calculating state {i}/ {len(index) - 1}')
-#     circuit_1q = QuantumCircuit(1)
-#     circuit_1q.ry(theta[indices[0]], 0)
-#     circuit_1q.rz(phi[indices[1]], 0)
-#     SRE1_1q[i] = calc_SRE1_pure(psi0_1.evolve(circuit_1q).data, remove_I=False)
-#     # SVN[i]  = S_vN(psi0_1.evolve(circuit_1q).data)
-#     evolved_density = DensityMatrix(psi0_1.evolve(circuit_1q)).data
-#     shannon_measurement_1q[i, :] = measurement_outcome_shannon(evolved_density)[0]
+SRE1_1q = np.zeros((len(index), ))
+SVN = np.zeros((len(index), ))
+shannon_measurement_1q = np.zeros((len(index), 4 - 1))
+psi0_1 = Statevector.from_label('0')
+#
+for i, indices in enumerate(index):
+    loger_main.info(f'Calculating state {i}/ {len(index) - 1}')
+    circuit_1q = QuantumCircuit(1)
+    circuit_1q.ry(theta[indices[0]], 0)
+    circuit_1q.rz(phi[indices[1]], 0)
+    SRE1_1q[i] = calc_SRE1_pure(psi0_1.evolve(circuit_1q).data, remove_I=False)
+    # SVN[i]  = S_vN(psi0_1.evolve(circuit_1q).data)
+    evolved_density = DensityMatrix(psi0_1.evolve(circuit_1q)).data
+    shannon_measurement_1q[i, :] = measurement_outcome_shannon(evolved_density)[0]
 
 
 # Two-qubit case
@@ -76,9 +76,10 @@ theta1 = np.linspace(0, pi, 101)
 theta2 = 0
 SRE1_2q = np.zeros((len(index), ))
 shannon_measurement_2q = np.zeros((len(index), 3 ** 2))
-
 circuit0 = QuantumCircuit(2)
-circuit0.ry(theta2, 1)
+# circuit0.ry(theta2, 1)
+# circuit0.h(0)
+# circuit0.cx(0, 1)
 psi0_2q = Statevector.from_label('00').evolve(circuit0)
 for i, indices in enumerate(index):
     loger_main.info(f'Calculating state {i}/ {len(index) - 1}')

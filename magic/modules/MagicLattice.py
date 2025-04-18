@@ -195,24 +195,15 @@ def measurement_outcome_shannon(rho):
     shannon_entropies = np.zeros((len(pauli_strings), ))
     for i, pauli in enumerate(pauli_strings):
 
-        list_projectors = []
+        # Get all possible orthogonal projectors in the measurement basis of the specific pauli string
+        projectors_1q, projectors_multiq = [], []
         for j in pauli:
-            list_projectors.append([projectors[j]['+'], projectors[j]['-']])
+            projectors_1q.append([projectors[j]['+'], projectors[j]['-']])
+        projectors_multiq_tuple = product(*projectors_1q)
+        for projector_tuple in projectors_multiq_tuple:
+            projectors_multiq.append(reduce(lambda A, B: np.kron(A, B), projector_tuple))
 
-        possible_projectors_tuple = product(list_projectors)
-        for element in possible_projectors_tuple:
-            print(element)
-
-        possible_projectors = [reduce(np.kron, projector) for projector in possible_projectors_tuple]
-
-
-
-
-
-
-        P = Pauli(pauli).to_matrix()
-        _, vecs = np.linalg.eigh(P)
-        measurement_probs = np.array([np.trace(rho @ np.outer(vecs[:, i], vecs[:, i].T.conj())) for i in range(2**L)])
+        measurement_probs = np.array([np.trace(rho @ projector) for projector in projectors_multiq])
         measurement_probs[measurement_probs< 1e-16] = 1e-22
         shannon_entropies[i] = - measurement_probs @ np.log2(measurement_probs)
 
