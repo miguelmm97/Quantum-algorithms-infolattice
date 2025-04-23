@@ -194,13 +194,18 @@ def measurement_outcome_allstab_shannon(rho):
     shannon_entropies = np.zeros((len(stab_generators), ))
 
     # Shannon entropy for all stabiliser operator
-    list_all_projectors = []
+
     for i, group in enumerate(stab_generators):
+        list_all_projectors = []
         for generator in group:
             list_all_projectors.append(get_projectors(generator))
-        list_combined_projectors = product(*list_all_projectors)
-        projective_measurements = reduce(lambda A, B: A @ B, list_combined_projectors)
-        measurement_probs = np.array([np.trace(rho @ projector) for projector in projective_measurements])
+        if L==1:
+            measurement_probs = np.array([np.trace(rho @ projector) for projector in list_all_projectors[0]])
+        else:
+            list_combined_projectors = list(product(*list_all_projectors))
+            projective_measurements = [reduce(lambda A, B: A @ B, projector_tuple) for projector_tuple in list_combined_projectors]
+            measurement_probs = np.array([np.trace(rho @ projector) for projector in projective_measurements])
+
         measurement_probs[measurement_probs< 1e-16] = 1e-22
         shannon_entropies[i] = - measurement_probs @ np.log2(measurement_probs)
 
@@ -215,7 +220,8 @@ def get_projectors(operator):
 
     # Hard check, to be improved in the future
     for (i, j) in combinations(eigspace_p, 2):
-        if not np.allclose(eigvecs[:, i] @ eigvecs[:, j].conj(), 1, 1e-10):
+        if not np.allclose(eigvecs[:, i] @ eigvecs[:, j].conj(), 0., 1e-10):
+            print(eigvecs[:, i] @ eigvecs[:, j].conj())
             raise ValueError('The eigenvectors of the Pauli strings are not linearly independent!')
 
     # Full projectors on each eigenspace
@@ -229,7 +235,7 @@ def get_projectors(operator):
 def get_all_stab_generators(pauli_strings, num_qubits):
     pauli_matrices = [Pauli(string).to_matrix() for string in pauli_strings]
     list_generators = list(combinations(pauli_matrices, num_qubits))
-    list_strings = list(combinations(pauli_strings, num_qubits)) + pauli_strings
+    list_strings = list(combinations(pauli_strings, num_qubits))
     return list_generators, list_strings
 
 def measurement_outcome_shannon_product(rho):
