@@ -4,7 +4,7 @@ from functools import reduce
 
 
 from qiskit.quantum_info import DensityMatrix, partial_trace
-from qiskit.quantum_info import Pauli
+from qiskit.quantum_info import Pauli, PauliList
 from qiskit.circuit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 
@@ -187,14 +187,14 @@ def measurement_outcome_allstab_shannon(rho):
     # Stabilizer operators
     L = int(np.log2(len(rho)))
     pauli_strings = []
-    pauli_iter = product('XYZ', repeat=L)
+    pauli_iter = product('IXYZ', repeat=L)
     for element in pauli_iter:
         pauli_strings.append(''.join(element))
+    pauli_strings.remove('I' * L)
     stab_generators, list_strings = get_all_stab_generators(pauli_strings, L)
     shannon_entropies = np.zeros((len(stab_generators), ))
 
     # Shannon entropy for all stabiliser operator
-
     for i, group in enumerate(stab_generators):
         list_all_projectors = []
         for generator in group:
@@ -233,10 +233,21 @@ def get_projectors(operator):
     return [P_p, P_m]
 
 def get_all_stab_generators(pauli_strings, num_qubits):
-    pauli_matrices = [Pauli(string).to_matrix() for string in pauli_strings]
-    list_generators = list(combinations(pauli_matrices, num_qubits))
     list_strings = list(combinations(pauli_strings, num_qubits))
-    return list_generators, list_strings
+    list_groups, group_strings = [], []
+    for group in list_strings:
+        flag = True
+        for element in group:
+            if np.prod(Pauli(element).commutes(PauliList(group)))==0:
+                flag = False
+                break
+            else:
+                pass
+        if flag:
+            list_groups.append([Pauli(string).to_matrix() for string in group])
+            group_strings.append(group)
+
+    return list_groups, group_strings
 
 def measurement_outcome_shannon_product(rho):
 
