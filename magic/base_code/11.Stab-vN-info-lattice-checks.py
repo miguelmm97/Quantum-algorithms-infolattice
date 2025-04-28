@@ -17,11 +17,11 @@ from datetime import date
 
 # Imports from Qiskit
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector, DensityMatrix, partial_trace
+from qiskit.quantum_info import Statevector, DensityMatrix
 
 # Information lattice and functions
 from modules.InfoLattice import calc_info, plot_info_latt
-from modules.StabilizerLattice import calc_stabilizer_vN_info, plot_stabilizer_vN_latt
+from modules.StabilizerLattice import calc_stabilizer_vN_info, plot_stabilizer_vN_latt, stabilizer_vN_entropy, partial_trace
 from modules.functions import *
 
 
@@ -58,13 +58,34 @@ psi0 = Statevector.from_label('0' * num_qubits)
 
 # Circuit
 circuit = QuantumCircuit(num_qubits)
-circuit.ry(np.pi/10, 0)
-
+circuit.h(0)
+circuit.cx(0, 1)
+circuit.cx(1, 2)
+circuit.ry(np.pi/4, 0)
+circuit.ry(np.pi/4, 2)
 
 # Information lattices
 vN_lattice = calc_info(psi0.evolve(circuit).data)
 stab_vN_lattice = calc_stabilizer_vN_info(psi0.evolve(circuit).data)
 magic_lattice = {key: vN_lattice[key] - stab_vN_lattice[key] for key in vN_lattice.keys()}
+
+# Debug
+# psi = psi0.evolve(circuit).data
+# rho = np.outer(psi, psi.conj())
+# rho_01 = partial_trace(rho, 0, 1)
+# rho_11 = partial_trace(rho, 1, 1)
+# rho_21 = partial_trace(rho, 2, 1)
+# rho_02 = partial_trace(rho, 0, 2)
+# rho_12 = partial_trace(rho, 1, 2)
+# rho_03 = partial_trace(rho, 0, 3)
+# S_01, entropies_01, list_strings_01 = stabilizer_vN_entropy(rho_01, return_entropy_list=True)
+# S_11, entropies_11, list_strings_11 = stabilizer_vN_entropy(rho_11, return_entropy_list=True)
+# S_21, entropies_21, list_strings_21 = stabilizer_vN_entropy(rho_21, return_entropy_list=True)
+# S_02, entropies_02, list_strings_02 = stabilizer_vN_entropy(rho_02, return_entropy_list=True)
+# S_12, entropies_12, list_strings_12 = stabilizer_vN_entropy(rho_12, return_entropy_list=True)
+# S_03, entropies_03, list_strings_03 = stabilizer_vN_entropy(rho, return_entropy_list=True)
+# min_index = np.where(entropies_03 == np.min(entropies_03))[0][0]
+# min_group = list_strings_03[min_index]
 
 #%% Figures
 
