@@ -63,7 +63,7 @@ def S_vN(psi):
     sv = sv[sv > 1e-16]
     sv = sv ** 2
     #print("sv", sv)
-    return -np.sum(sv * np.log2(sv))
+    return -np.sum(sv * np.emath.logn(3, sv))
 
 
 def get_entanglement_spectrum_from_correlation(seed, correlation, subsystem):

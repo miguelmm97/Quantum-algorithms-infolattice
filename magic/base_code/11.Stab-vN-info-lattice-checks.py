@@ -20,8 +20,9 @@ from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, DensityMatrix
 
 # Information lattice and functions
-from modules.InfoLattice import calc_info, plot_info_latt
-from modules.StabilizerLattice import calc_stabilizer_vN_info, plot_stabilizer_vN_latt, stabilizer_vN_entropy, partial_trace
+from modules.InfoLattice import calc_info, plot_info_latt, calc_entropies
+from modules.StabilizerLattice import calc_stabilizer_vN_info, plot_stabilizer_vN_latt, stabilizer_vN_entropy, partial_trace,\
+    calc_stab_vN_entropies
 from modules.functions import *
 
 
@@ -62,7 +63,6 @@ circuit.h(0)
 circuit.cx(0, 1)
 circuit.cx(1, 2)
 circuit.ry(np.pi/4, 0)
-circuit.ry(np.pi/4, 2)
 
 # Information lattices
 vN_lattice = calc_info(psi0.evolve(circuit).data)
@@ -84,8 +84,22 @@ magic_lattice = {key: vN_lattice[key] - stab_vN_lattice[key] for key in vN_latti
 # S_02, entropies_02, list_strings_02 = stabilizer_vN_entropy(rho_02, return_entropy_list=True)
 # S_12, entropies_12, list_strings_12 = stabilizer_vN_entropy(rho_12, return_entropy_list=True)
 # S_03, entropies_03, list_strings_03 = stabilizer_vN_entropy(rho, return_entropy_list=True)
-# min_index = np.where(entropies_03 == np.min(entropies_03))[0][0]
-# min_group = list_strings_03[min_index]
+# min_index_top = np.where(entropies_03 == np.min(entropies_03))[0][0]
+# min_index_middle_left = np.where(entropies_02 == np.min(entropies_02))[0][0]
+# min_index_middle_right = np.where(entropies_12 == np.min(entropies_12))[0][0]
+# min_index_bottom_left = np.where(entropies_01 == np.min(entropies_01))[0][0]
+# min_index_bottom_middle = np.where(entropies_11 == np.min(entropies_11))[0][0]
+# min_index_bottom_right = np.where(entropies_21 == np.min(entropies_21))[0][0]
+# min_group_top = list_strings_03[min_index_top]
+# min_group_middle_left = list_strings_02[min_index_middle_left]
+# min_group_middle_right = list_strings_12[min_index_middle_right]
+# min_group_bottom_left = list_strings_01[min_index_bottom_left]
+# min_group_bottom_middle = list_strings_11[min_index_bottom_middle]
+# min_group_bottom_right = list_strings_21[min_index_bottom_right]
+
+vN_entropies = calc_entropies(psi0.evolve(circuit).data)
+stab_vN_entropies = calc_stab_vN_entropies(psi0.evolve(circuit).data)
+magic_entorpies = {key: vN_entropies[key] - stab_vN_entropies[key] for key in vN_lattice.keys()}
 
 #%% Figures
 

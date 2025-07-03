@@ -108,8 +108,8 @@ SRE1_latt_dict[1] = calc_classical_magic(psi_magic.data)
 magic_latt_dict[0] = {key: info_dict[0][key] - SRE1_latt_dict[0][key] for key in info_dict[0].keys()}
 magic_latt_dict[1] = {key: info_dict[1][key] - SRE1_latt_dict[1][key] for key in info_dict[0].keys()}
 
-nonint_magic[0] = non_integer_magic(info_dict[0])
-nonint_magic[1] = non_integer_magic(info_dict[1])
+# nonint_magic[0] = non_integer_magic(info_dict[0])
+# nonint_magic[1] = non_integer_magic(info_dict[1])
 
 total_info_SRE1[0] = calc_total_info(SRE1_latt_dict[0])
 total_info_SRE1[1] = calc_total_info(SRE1_latt_dict[1])
