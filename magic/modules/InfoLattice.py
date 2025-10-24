@@ -243,7 +243,8 @@ def calc_info_per_scale(info_latt, bc='periodic'):
     return info_per_scale
 
 
-def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate_ints=False, tol_ints=1e-14):
+def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate_ints=False, tol_ints=1e-14, linewidth_ints=1,
+                   linewidth=1, color_ints='black', alpha_ints=1):
 
     # Color normalisation
     norm = Normalize(vmin=min_value, vmax=max_value)
@@ -254,18 +255,24 @@ def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate
     for l in info_latt:
         for x in range(len(info_latt[l])):
             value = info_latt[l][x]
-            if indicate_ints and np.allclose(value, round(value), atol=tol_ints) and round(value) != 0:
-                linewidth = 3
-                edgecolor= 'black'
+            if indicate_ints and np.allclose(value, round(value), atol=tol_ints) and value > 0.5:
+                linewidth_plot = linewidth_ints
+                edgecolor = color_ints
+                alpha_plot = alpha_ints
+                linestyle_plot = 'solid'
             elif value < -1e-10:
-                linewidth = 3
+                linewidth_plot = 3
                 edgecolor = 'blue'
+                alpha_plot = 1
+                linestyle_plot = 'solid'
             else:
-                linewidth = 0.2
+                linewidth_plot = linewidth
                 edgecolor = 'black'
-            ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, facecolor=color_map(norm(value)), edgecolor=edgecolor, linewidth=linewidth))
-    ax.set_xlim([-2*r,1])
-    ax.set_ylim([-2*r,1+2*r])
+                alpha_plot = 1
+                linestyle_plot = 'solid'
+            ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, facecolor=color_map(norm(value)), edgecolor=edgecolor, linewidth=linewidth_plot, alpha=alpha_plot, linestyle=linestyle_plot))
+    ax.set_xlim([-2*r, 1])
+    ax.set_ylim([-2*r, 1+2*r])
     ax.set_aspect('equal')
     ax.axis('off')
 

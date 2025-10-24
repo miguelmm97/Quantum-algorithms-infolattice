@@ -1,6 +1,7 @@
 
 # Math
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Qiskit
 from qiskit.circuit import QuantumRegister, QuantumCircuit
@@ -274,9 +275,5 @@ def spinup():
 
 def spindown():
     return np.array([0, 1])
-
-
-
-
 
 
