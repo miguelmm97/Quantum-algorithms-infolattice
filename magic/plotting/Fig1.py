@@ -10,6 +10,8 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 import matplotlib.patches as patches
+from scipy.interpolate import splprep, splev
+from matplotlib.path import Path
 
 # Managing data
 import os
@@ -219,24 +221,46 @@ ax1.tick_params(which='major', length=6, labelsize=fontsize)
 ax1.tick_params(which='minor', width=0.75, labelsize=fontsize)
 ax1.tick_params(which='minor', length=3, labelsize=fontsize)
 ax1.text(0.75, 0.85, '$\\vert$Bell$\\rangle$', fontsize=fontsize-3)
+ax1.text(0.42, 0.19, '$\mathcal{C}_{1.5}^1$', fontsize=fontsize-5, color=color_info_per_scale1, alpha=1)
 ax1.axis('on')
 
 # Triangle denoting subsystem C_1.5^1
-triangle = [[0.2, 0.03], [0.8, 0.03], [0.5, 0.55]]
-ax1.add_patch(
-    patches.Polygon(
-        triangle,
-        closed=True,
-        fill=False,                  # no face color
-        edgecolor=color_info_per_scale1,
-        linewidth=2,
-        joinstyle='round',           # makes corners rounded
-        capstyle='round',             # makes line ends rounded
-        antialiased=True,
-        alpha=0.5,
-        linestyle='solid'
-    )
-)
+def rounded_triangle(points, radius=0.05, color='k', alpha=1):
+    pts = np.array(points)
+    n = len(pts)
+    path_data = []
+    for i in range(n):
+        p_prev = pts[i - 1]
+        p_curr = pts[i]
+        p_next = pts[(i + 1) % n]
+        v1 = p_prev - p_curr
+        v2 = p_next - p_curr
+        n1, n2 = np.linalg.norm(v1), np.linalg.norm(v2)
+        if n1 == 0 or n2 == 0:
+            continue
+        v1 /= n1
+        v2 /= n2
+
+        start = p_curr + v1 * radius
+        end   = p_curr + v2 * radius
+
+        if i == 0:
+            path_data.append((Path.MOVETO, start))
+        else:
+            path_data.append((Path.LINETO, start))
+        path_data.append((Path.CURVE3, p_curr))
+        path_data.append((Path.CURVE3, end))
+
+    path_data.append((Path.LINETO, path_data[0][1]))
+    path_data.append((Path.CLOSEPOLY, path_data[0][1]))
+    codes, verts = zip(*path_data)
+    return patches.PathPatch(Path(verts, codes), facecolor='none', edgecolor=color, lw=2, alpha=alpha)
+tri_patch = rounded_triangle([[0.2, 0.02], [0.8, 0.02], [0.5, 0.59]],
+                             radius=0.25,
+                             color=color_info_per_scale1,
+                             alpha=0.5)
+ax1.add_patch(tri_patch)
+
 
 # ---------------Fig 1(c): GHZ 4 qubits---------------------------------------------------------------------------------
 plot_info_latt(info_latt_2, ax2, colormap_info,
