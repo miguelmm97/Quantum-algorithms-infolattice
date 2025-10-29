@@ -9,6 +9,7 @@ from matplotlib import cm
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
+import matplotlib.patches as patches
 
 # Managing data
 import os
@@ -64,7 +65,7 @@ info_latt = calc_info(psi_stab.data)
 info_per_scale_2 = calc_info_per_scale(info_latt, bc='open')
 scales = np.arange(0, 10)
 interp_func = PchipInterpolator(scales, info_per_scale_2 ) #/ np.arange(n_qubits + 1, 1, -1))
-interp_scales_2 = np.arange(scales[0], scales[-1] + 0.1, 0.1)
+interp_scales_2 = np.arange(scales[0] - 0.2, scales[-1] + 0.1, 0.1)
 interp_average_2 = interp_func(interp_scales_2)
 
 
@@ -103,7 +104,7 @@ info_latt_srm = calc_info(psi_srm.data)
 info_per_scale_srm = calc_info_per_scale(info_latt_srm, bc='open')
 scales = np.arange(0, 10)
 interp_func = PchipInterpolator(scales, info_per_scale_srm)
-interp_scales_srm = np.arange(scales[0], scales[-1] + 0.1, 0.1)
+interp_scales_srm = np.arange(scales[0] - 0.2, scales[-1] + 0.1, 0.1)
 interp_average_srm = interp_func(interp_scales_srm)
 
 
@@ -220,7 +221,22 @@ ax1.tick_params(which='minor', length=3, labelsize=fontsize)
 ax1.text(0.75, 0.85, '$\\vert$Bell$\\rangle$', fontsize=fontsize-3)
 ax1.axis('on')
 
-
+# Triangle denoting subsystem C_1.5^1
+triangle = [[0.2, 0.03], [0.8, 0.03], [0.5, 0.55]]
+ax1.add_patch(
+    patches.Polygon(
+        triangle,
+        closed=True,
+        fill=False,                  # no face color
+        edgecolor=color_info_per_scale1,
+        linewidth=2,
+        joinstyle='round',           # makes corners rounded
+        capstyle='round',             # makes line ends rounded
+        antialiased=True,
+        alpha=0.5,
+        linestyle='solid'
+    )
+)
 
 # ---------------Fig 1(c): GHZ 4 qubits---------------------------------------------------------------------------------
 plot_info_latt(info_latt_2, ax2, colormap_info,
@@ -309,14 +325,14 @@ ax5_1.plot(scales, info_per_scale_srm,
          markersize=4,
          linestyle='none',
          color=color_info_per_scale1)
-ax5_1.fill_between(interp_scales_srm, interp_average_srm,
+ax5_1.fill_between(interp_scales_srm, interp_average_srm, -0.2,
                    color=color_info_per_scale1,
                    alpha=0.2)
-ax5_1.set_xlim(0, n_qubits - 1)
-ax5_1.set_ylim(0, 7)
+ax5_1.set_xlim(-0.2, n_qubits - 1+0.2)
+ax5_1.set_ylim(-0.2, 7+0.2)
 ax5_1.set_xlabel('$\ell$', fontsize=fontsize, labelpad=-20)
 ax5_1.set_ylabel('$ I^\ell$', fontsize=fontsize, rotation='horizontal', labelpad=-5)
-ax5_1.set_xticks(ticks=[0, (n_qubits / 2), n_qubits - 1], labels=['$0$', '$L/2$', '$L$'])
+ax5_1.set_xticks(ticks=[0, 5, 9], labels=['$0$', '$5$', '$9$'])
 ax5_1.set_yticks(ticks=[0, 7])
 ax5_1.tick_params(which='major', width=0.75, labelsize=fontsize)
 ax5_1.tick_params(which='major', length=6, labelsize=fontsize)
@@ -347,11 +363,11 @@ ax5_2.plot(scales, info_per_scale_2,
          markersize=4,
          linestyle='None',
          color=color_info_per_scale1)
-ax5_2.fill_between(interp_scales_2, interp_average_2,
+ax5_2.fill_between(interp_scales_2, interp_average_2, -0.2,
                    color=color_info_per_scale1,
                    alpha=0.2)
-ax5_2.set_xlim(0, n_qubits - 1)
-ax5_2.set_ylim(0, 7)
+ax5_2.set_xlim(-0.2, n_qubits - 1+0.2)
+ax5_2.set_ylim(-0.2, 7+0.2)
 ax5_2.set_ylabel('$ I^\ell$', fontsize=fontsize, rotation='horizontal', labelpad=-5)
 ax5_2.tick_params(which='major', width=0.75, labelsize=fontsize)
 ax5_2.tick_params(which='major', length=6, labelsize=fontsize)

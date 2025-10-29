@@ -244,7 +244,7 @@ def calc_info_per_scale(info_latt, bc='periodic'):
 
 
 def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate_ints=False, tol_ints=1e-14, linewidth_ints=1,
-                   linewidth=1, color_ints='black', alpha_ints=1):
+                   linewidth=1, color_ints='black', alpha_ints=1, decrease_zeros=False):
 
     # Color normalisation
     norm = Normalize(vmin=min_value, vmax=max_value)
@@ -270,6 +270,11 @@ def plot_info_latt(info_latt, ax, color_map, min_value=0, max_value=2., indicate
                 edgecolor = 'black'
                 alpha_plot = 1
                 linestyle_plot = 'solid'
+            if decrease_zeros:
+                if np.abs(value) < 1e-3:
+                    alpha_plot=0.5
+                else:
+                    pass
             ax.add_artist(plt.Circle((x/L+l/(2*L), (l-0.5)/L), r, facecolor=color_map(norm(value)), edgecolor=edgecolor, linewidth=linewidth_plot, alpha=alpha_plot, linestyle=linestyle_plot))
     ax.set_xlim([-2*r, 1])
     ax.set_ylim([-2*r, 1+2*r])

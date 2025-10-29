@@ -7,10 +7,12 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib import cm
 from scipy.interpolate import PchipInterpolator
-import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.patches import FancyArrowPatch
-
+from pdf2image import convert_from_path
+from PIL import Image, ImageChops
+import seaborn as sns
+from modules.InfoLattice import plot_info_latt
+from modules.functions import *
 
 from load import (
     load_Gamma,
@@ -19,13 +21,9 @@ from load import (
     load_information_lattice
 )
 
-# Information lattice and functions
-from modules.InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
-from modules.functions import *
-import seaborn as sns
-from qiskit.quantum_info import Statevector
 
-# Configuration
+
+#%% Configuration
 DATA_DIR = 'final-data-potts'
 SYSTEM_SIZES = [8, 10, 12, 14] #[8, 9, 10, 11, 12]
 J_VALUE = 1.0
@@ -37,7 +35,7 @@ H_VALUES = sorted({
           fname))
     and int(m.group('N')) in SYSTEM_SIZES
 })
-INFO_H = [0., 0.75]
+INFO_H = [0, 0.75]
 
 
 
@@ -51,32 +49,12 @@ axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
 color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
 fontsize=20
 
-
-fig1 = plt.figure(figsize=(8, 6))
-gs = GridSpec(1, 1, figure=fig1, wspace=0.5, hspace=0.5)
-# ax0 = fig1.add_subplot(gs[0, :1])
-# ax1 = fig1.add_subplot(gs[0, 1])
-ax1 = fig1.add_subplot(gs[:, :])
-# ax2 = fig1.add_subplot(gs[1, :1])
-ax0 = ax1.inset_axes([0.52, 0.4, 0.45, 0.45])
-ax2 = ax1.inset_axes([0.08, 0.1, 0.25, 0.25])
-# inset_spec = gs[:, :].subgridspec(1, 1, wspace=0., hspace=0.0)
-# ax2
-
-# pos0 = ax0.get_position()
-# pos1 = ax1.get_position()
-# pos2 = ax2.get_position()
-# ax1.set_position([pos1.x0 * 0.8, pos1.y0, pos1.width * 1.2, pos1.height * 0.84])
-# ax2.set_position([pos1.x0 * 0.8, pos2.y0 * 1.5, pos1.width * 1.2, pos1.height * 0.84])
-
-
-# inner_gs = gridspec.GridSpecFromSubplotSpec(4, 1, subplot_spec=ax2, wspace=0., hspace=0.0)
-# ax2_0 = fig1.add_subplot(inner_gs[0, 0])
-# ax2_1 = fig1.add_subplot(inner_gs[1, 0])
-# ax2_2 = fig1.add_subplot(inner_gs[2, 0])
-# ax2_3 = fig1.add_subplot(inner_gs[3, 0])
-
-
+fig1 = plt.figure(figsize=(8, 8))
+gs = GridSpec(4, 1, figure=fig1, wspace=0.5, hspace=0.6)
+ax00 = fig1.add_subplot(gs[0, 0])
+ax1 = fig1.add_subplot(gs[1:, 0])
+ax0 = ax1.inset_axes([0.46, 0.32, 0.55, 0.55])
+ax2 = ax1.inset_axes([0.07, 0.1, 0.28, 0.3])
 
 
 # Colormap
@@ -90,12 +68,42 @@ colorbar_info = cm.ScalarMappable(norm=Normalize(vmin=min, vmax=max), cmap=color
 color_ints = 'royalblue'
 line_ints = 2
 alpha_ints = 1
-# palette_L = sns.color_palette("magma_r", as_cmap=True)
-# colors_L = palette_L(np.linspace(0, 1, 4))
 color_info_per_scale1 = colors_info[75]
 color_info_per_scale2 = 'crimson'
 colors_scale = [color_info_per_scale1, color_info_per_scale2]
 colors_L = [ colors_info[20], colors_info[60], colors_info[90], 'k']
+
+
+
+# ---------------- Folding sketch ----------------------------------------------------------
+# Load image and crop whitespace
+images = convert_from_path("sketch.pdf")
+images[0].save("sketch.png", "PNG")
+im = Image.open("sketch.png")
+bg = Image.new(im.mode, im.size, im.getpixel((0,0)))  # background color
+diff = ImageChops.difference(im, bg)
+bbox = diff.getbbox()
+if bbox:
+    im = im.crop(bbox)
+
+ax00.imshow(im)
+ax00.axis('off')
+ax00.text(0, 0, '$(a)$', fontsize=fontsize)
+ax00.text(-80, 330, '$n$: $0$', fontsize=fontsize)
+ax00.text(200, 330, '$1$', fontsize=fontsize)
+ax00.text(360, 330, '$2$', fontsize=fontsize)
+ax00.text(530, 330, '$3$', fontsize=fontsize)
+ax00.text(690, 330, '$4$', fontsize=fontsize)
+ax00.text(850, 330, '$5$', fontsize=fontsize)
+ax00.text(970, 120, 'Folding', fontsize=fontsize-5)
+# ax00.text(1100, 400, '$n_{\\rm folded}$: $0$', fontsize=fontsize)
+ax00.text(1280, 400, '$n\'$: $0$', fontsize=fontsize)
+ax00.text(1580, 400, '$1$', fontsize=fontsize)
+ax00.text(1740, 400, '$2$', fontsize=fontsize)
+ax00.text(1255, -20, '$n$: $2  {\\scriptstyle \\cup}$'+'$3$', fontsize=fontsize)
+ax00.text(1535, -20, '$1  {\\scriptstyle \\cup}$'+'$4$', fontsize=fontsize)
+ax00.text(1700, -20, '$0  {\\scriptstyle \\cup}$'+'$5$', fontsize=fontsize)
+
 
 
 
@@ -105,8 +113,6 @@ path = os.path.join(DATA_DIR, f'lowEnergyStates_N{6}_J{J_VALUE:.3f}_h{0.0:.3f}.h
 info_latt_load = load_information_lattice(d=0, file_path=path)[0]
 info_latt = {}
 L = 12
-# psi0 = Statevector.from_label('0' * L)
-# info_latt = calc_info(psi0.data)
 
 for l in range(len(info_latt_load)):
     local_info = []
@@ -120,7 +126,8 @@ plot_info_latt(info_latt, ax0, colormap_info,
                linewidth_ints=line_ints,
                color_ints=color_ints,
                alpha_ints=alpha_ints,
-               linewidth=0.5)
+               linewidth=0.5,
+               decrease_zeros=True)
 ax0.set_xlabel('$n$', fontsize=fontsize, labelpad=-15)
 ax0.set_ylabel('$\ell$', fontsize=fontsize, labelpad=-20)
 # ax0.set_xlim(-0.1, 1.1)
@@ -134,18 +141,15 @@ ax0.tick_params(which='minor', length=3, labelsize=fontsize)
 ax0.axis('on')
 
 # Colorbar
-# cbar_ax = fig1.add_subplot(gs[2:, 2])
 divider = make_axes_locatable(ax0)
 cax = divider.append_axes("right", size="6%", pad=0.1)
 cbar = fig1.colorbar(colorbar_info, cax=cax, orientation='vertical', ticks=[0, 1, 2])
 # cbar_ax.set_axis_off()
-cbar.set_label(label='$i^{\ell}_n$', labelpad=3, fontsize=20, rotation='horizontal')
+cbar.set_label(label='$i^{\ell}_n$', labelpad=-3, fontsize=20, rotation='horizontal')
 cbar.ax.tick_params(which='major', width=0.75, labelsize=fontsize)
 cbar.ax.set_yticklabels(['0', '1', '2'])
-# label = cbar.ax.get_label()
-# x, y = label.get_position()
-# label.set_position((x, y - 0.175))
-
+label = cbar.ax.yaxis.label
+label.set_position((-0.3, 0.8))
 
 
 # -----------------Fig 2(c): Gamma/ Lambda vs h ------------------------------------------------------------------------
@@ -185,9 +189,7 @@ for i, N in enumerate(SYSTEM_SIZES):
              alpha=1)
 
 ax1.plot(np.linspace(-0.1, 0.8, 10), np.ones((10, )) * np.log2(3), linestyle='dashed', color='grey', alpha=0.5)
-# ax1.plot(np.ones((10, )) * 1/3, np.linspace(0, 2, 10), linestyle='dashed', color='grey', alpha=0.5)
 ax1.set_xlabel('$h$', fontsize=fontsize)
-# ax1.set_ylabel('$\Gamma$', fontsize=fontsize, rotation='horizontal', labelpad=10)
 ax1.set_xlim(0, 0.8)
 ax1.set_ylim(0-0.015, 1.75)
 ax1.tick_params(which='major', width=0.75, labelsize=fontsize)
@@ -205,7 +207,7 @@ x, y = label.get_position()
 label.set_position((x, y - 0.1))
 
 ax1.text(0.01, np.log2(3) + 0.05, '$(b)$', fontsize=fontsize)
-ax1.text(0.7, np.log2(3) + 0.03, '$\\log_2 (3)$', fontsize=fontsize, color='grey')
+ax1.text(0.7, np.log2(3) + 0.05, '$\\log_2 (3)$', fontsize=fontsize, color='grey')
 ax1.text(0.1385, 1.3, '$\\underline{L}$', fontsize=fontsize)
 leg1 = ax1.legend(loc='center left',
            ncol=1,
@@ -220,10 +222,10 @@ for line in leg1.get_lines():
     line.set_marker('None')
     line.set_linewidth(2)
 
-ax1.text(0.59, 0.37, '$\\Gamma$', fontsize=fontsize)
-ax1.text(0.59, 0.27, '$\\Gamma_{\\rm folded}$', fontsize=fontsize)
-ax1.plot(0.57, 0.3, marker='^', color='k', markerfacecolor='None', markersize=7, alpha=1)
-ax1.plot(0.57, 0.4, marker='o', color='k', markersize=7, markerfacecolor='None', alpha=1)
+ax1.text(0.65, 0.3, '$\\Gamma$', fontsize=fontsize)
+ax1.text(0.65, 0.2, '$\\Gamma_{\\rm folded}$', fontsize=fontsize)
+ax1.plot(0.63, 0.23, marker='^', color='k', markerfacecolor='None', markersize=7, alpha=1)
+ax1.plot(0.63, 0.33, marker='o', color='k', markersize=7, markerfacecolor='None', alpha=1)
 
 
 # ---------------------------Fig 2(d): Info per scale ------------------------------------------------------------------
@@ -246,21 +248,24 @@ for j, h in enumerate(INFO_H):
 
     if j==0:
         gamma = np.sum(y[int(0.5 * L):])
+        zorder=10
     else:
-        omega = np.sum(y[:int(0.5 * L)])
+        zorder=0
 
     ax2.plot(interp_scales, interp_average,
              marker='None',
              linestyle='solid',
              color=colors_scale[j],
-             label=fr'${h:.2f}$')
+             label=fr'${h:.2f}$',
+             zorder=zorder)
     ax2.fill_between(interp_scales, interp_average, -0.2,
-             color=colors_scale[j], alpha=0.2)
+             color=colors_scale[j], alpha=0.2, zorder=zorder)
     ax2.plot(scales, y,
              marker='o',
              markersize=4,
              linestyle='None',
-             color=colors_scale[j])
+             color=colors_scale[j],
+             zorder=zorder)
 
 
 
@@ -293,7 +298,6 @@ ax2.legend(loc='upper center',
            handletextpad=0.3,
            bbox_to_anchor=(0.61, 1))
 ax2.text(4.8, 1.5, f'$\\Gamma={gamma :.3f}$', fontsize=fontsize-5, color=colors_scale[0])
-# ax2.text(2, 7, f'$\\Omega={omega :.0f}$', fontsize=fontsize-5, color=colors_scale[1])
 
 # Save figure with tight white boundary
 plt.savefig("fig-2.pdf", bbox_inches='tight', pad_inches=0.1)
