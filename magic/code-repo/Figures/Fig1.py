@@ -1,58 +1,57 @@
 #%% Imports
 
 # Built-in modules
-from scipy.interpolate import PchipInterpolator
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+import matplotlib.gridspec as gridspec
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib import cm
-import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.interpolate import PchipInterpolator
 import seaborn as sns
-import matplotlib.patches as patches
-from scipy.interpolate import splprep, splev
-from matplotlib.path import Path
-
-# Managing data
-import os
-import sys
-import h5py
-from datetime import date
 
 # Imports from Qiskit
-from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 
 # Information lattice and functions
-from modules.InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
-from modules.functions import *
+from InfoLattice import calc_info, plot_info_latt, calc_info_per_scale
+from functions import *
 
 
-file_list = ['Exp32.h5']
-data_dict = load_my_data(file_list, '..')
+#%% Load data
+file_list = ["data-fig1-seeds.h5"]
+data_dict = load_my_data(file_list, "../data")
 seedlist1 = data_dict[file_list[0]]['Simulation']['seed_stab']
 seedlist2 = data_dict[file_list[0]]['Simulation']['seed_srm']
 
-#%% Parameters
 
-# Example 1: Néel state
+#%% Construction of states
+# --------------------(a): Néel state ----------------------------------------------------------------------------------
+# Information lattice
 psi0 = Statevector.from_label('0101')
-info_latt_0 = calc_info(psi0.data)
+info_latt_a = calc_info(psi0.data)
 
-# Example 2: Néel + Bell pair
+# --------------------(b): Néel + Bell pair ----------------------------------------------------------------------------
+# Information lattice
 psi1 = (1 / np.sqrt(2)) * (Statevector.from_label('0101') + Statevector.from_label('0011'))
-info_latt_1 = calc_info(psi1.data)
+info_latt_b = calc_info(psi1.data)
 
-# Example 3: 4-qubit GHZ state
+# ---------------------(c): 4-qubit GHZ state --------------------------------------------------------------------------
+# Initial state
 psi_GHZ =  Statevector.from_label('0000')
+
+# GHZ circuit
 GHZ_circuit = QuantumCircuit(4)
 GHZ_circuit.h(0)
 for i in range(1, 4):
     GHZ_circuit.cx(i - 1, i)
-psi_GHZ = psi_GHZ.evolve(GHZ_circuit)
-info_latt_2 = calc_info(psi_GHZ.data)
 
-# Example 4: Random stab from the GHZ state
+# Information lattice
+psi_GHZ = psi_GHZ.evolve(GHZ_circuit)
+info_latt_c = calc_info(psi_GHZ.data)
+
+# -----------------(d, f): Random stab from the GHZ state --------------------------------------------------------------
+# Initial GHZ state
 n_qubits = 10
 psi_GHZ =  Statevector.from_label('0' * n_qubits)
 GHZ_circuit = QuantumCircuit(n_qubits)
@@ -60,21 +59,23 @@ GHZ_circuit.h(0)
 for i in range(1, n_qubits):
     GHZ_circuit.cx(i - 1, i)
 psi_GHZ = psi_GHZ.evolve(GHZ_circuit)
-# seedlist1 = np.random.randint(0, 1000000, size=(2, ))
+
+# Random Clifford evolution
 clifford = random_clifford_circuit(num_qubits=n_qubits, depth=2, seed=seedlist1)
 psi_stab = psi_GHZ.evolve(clifford)
-info_latt = calc_info(psi_stab.data)
-info_per_scale_2 = calc_info_per_scale(info_latt, bc='open')
-scales = np.arange(0, 10)
-interp_func = PchipInterpolator(scales, info_per_scale_2 ) #/ np.arange(n_qubits + 1, 1, -1))
-interp_scales_2 = np.arange(scales[0] - 0.2, scales[-1] + 0.1, 0.1)
-interp_average_2 = interp_func(interp_scales_2)
+
+# Information lattice and information per scale
+info_latt_d = calc_info(psi_stab.data)
+info_per_scale_f = calc_info_per_scale(info_latt_d, bc='open')
 
 
-# Example 5: Short-range nonstabilizer state
+# ----------------(e, g): Short-range nonstabilizer state --------------------------------------------------------------
+# Initial state
 n_qubits = 10
 psi_srm_label = '0' * n_qubits
 psi_srm = Statevector.from_label(psi_srm_label)
+
+# T-doped Clifford circuit
 Nlayers, Nblocks = 10, 3
 T_per_block = 5
 min_block, max_block = 0, 20
@@ -82,8 +83,6 @@ qubits = list(range(n_qubits))
 clifford_sequence = QuantumCircuit(n_qubits)
 magic_circuit = QuantumCircuit(n_qubits)
 info_interval = int(Nlayers/ Nblocks)
-# seedlist2 = np.random.randint(0, 1000000, size=(Nlayers, ))
-
 for i in range(Nlayers):
     # Clifford part
     layer = QuantumCircuit(n_qubits)
@@ -102,26 +101,9 @@ for i in range(Nlayers):
     # Circuit evolution
     psi_srm = psi_srm.evolve(layer)
 
-info_latt_srm = calc_info(psi_srm.data)
-info_per_scale_srm = calc_info_per_scale(info_latt_srm, bc='open')
-scales = np.arange(0, 10)
-interp_func = PchipInterpolator(scales, info_per_scale_srm)
-interp_scales_srm = np.arange(scales[0] - 0.2, scales[-1] + 0.1, 0.1)
-interp_average_srm = interp_func(interp_scales_srm)
-
-
-# data_dir = '..'
-# file_list = os.listdir(data_dir)
-# expID = get_fileID(file_list, common_name='Exp')
-# filename = '{}{}{}'.format('Exp', expID, '.h5')
-# filepath = os.path.join(data_dir, filename)
-
-# with h5py.File(filepath, 'w') as f:
-#     simulation = f.create_group('Simulation')
-#     store_my_data(simulation, 'seed_stab', seedlist1)
-#     store_my_data(simulation, 'seed_srm', seedlist2)
-
-
+# Information lattice and information per scale
+info_latt_e= calc_info(psi_srm.data)
+info_per_scale_g= calc_info_per_scale(info_latt_e, bc='open')
 
 
 
@@ -181,9 +163,20 @@ fig1.text(pos4.x0 + 0.058,   pos4.y0 + 0.3, '$(e)$', fontsize=fontsize-3, ha="ce
 fig1.text(pos5_1.x0 + 0.054, pos5_1.y0 + 0.11, '$(f)$', fontsize=fontsize-3, ha="center")
 fig1.text(pos5_2.x0 + 0.054, pos5_2.y0 + 0.1, '$(g)$', fontsize=fontsize-3, ha="center")
 
+# Smoother curves for the information per scale
+scales = np.arange(0, 10)
+interp_func = PchipInterpolator(scales, info_per_scale_f)
+interp_scales_f = np.arange(scales[0] - 0.2, scales[-1] + 0.1, 0.1)
+interp_average_f = interp_func(interp_scales_f)
 
-# -------------Fig 1(a): Néel-------------------------------------------------------------------------------------------
-plot_info_latt(info_latt_0, ax0, colormap_info,
+interp_func = PchipInterpolator(scales, info_per_scale_g)
+interp_scales_g = np.arange(scales[0] - 0.2, scales[-1] + 0.1, 0.1)
+interp_average_g = interp_func(interp_scales_g)
+
+
+
+# -------------Fig 1(a): Néel state -------------------------------------------------------------------------------------------
+plot_info_latt(info_latt_a, ax0, colormap_info,
                indicate_ints=True,
                linewidth_ints=line_ints,
                color_ints=color_ints,
@@ -203,8 +196,8 @@ ax0.text(0.75, 0.85, '$\\vert$Néel$\\rangle$', fontsize=fontsize-3)
 ax0.axis('on')
 
 
-# --------------Example 1(b): Bell pair---------------------------------------------------------------------------------
-plot_info_latt(info_latt_1, ax1, colormap_info,
+# --------------Example 1(b):  Néel + Bell pair-------------------------------------------------------------------------
+plot_info_latt(info_latt_b, ax1, colormap_info,
                indicate_ints=True,
                linewidth_ints=line_ints,
                color_ints=color_ints,
@@ -221,49 +214,11 @@ ax1.tick_params(which='major', length=6, labelsize=fontsize)
 ax1.tick_params(which='minor', width=0.75, labelsize=fontsize)
 ax1.tick_params(which='minor', length=3, labelsize=fontsize)
 ax1.text(0.75, 0.85, '$\\vert$Bell$\\rangle$', fontsize=fontsize-3)
-# ax1.text(0.42, 0.19, '$\mathcal{C}_{1.5}^1$', fontsize=fontsize-5, color=color_info_per_scale1, alpha=1)
 ax1.axis('on')
 
-# Triangle denoting subsystem C_1.5^1
-# def rounded_triangle(points, radius=0.05, color='k', alpha=1):
-#     pts = np.array(points)
-#     n = len(pts)
-#     path_data = []
-#     for i in range(n):
-#         p_prev = pts[i - 1]
-#         p_curr = pts[i]
-#         p_next = pts[(i + 1) % n]
-#         v1 = p_prev - p_curr
-#         v2 = p_next - p_curr
-#         n1, n2 = np.linalg.norm(v1), np.linalg.norm(v2)
-#         if n1 == 0 or n2 == 0:
-#             continue
-#         v1 /= n1
-#         v2 /= n2
-#
-#         start = p_curr + v1 * radius
-#         end   = p_curr + v2 * radius
-#
-#         if i == 0:
-#             path_data.append((Path.MOVETO, start))
-#         else:
-#             path_data.append((Path.LINETO, start))
-#         path_data.append((Path.CURVE3, p_curr))
-#         path_data.append((Path.CURVE3, end))
-#
-#     path_data.append((Path.LINETO, path_data[0][1]))
-#     path_data.append((Path.CLOSEPOLY, path_data[0][1]))
-#     codes, verts = zip(*path_data)
-#     return patches.PathPatch(Path(verts, codes), facecolor='none', edgecolor=color, lw=2, alpha=alpha)
-# tri_patch = rounded_triangle([[0.2, 0.02], [0.8, 0.02], [0.5, 0.59]],
-#                              radius=0.25,
-#                              color=color_info_per_scale1,
-#                              alpha=0.5)
-# ax1.add_patch(tri_patch)
 
-
-# ---------------Fig 1(c): GHZ 4 qubits---------------------------------------------------------------------------------
-plot_info_latt(info_latt_2, ax2, colormap_info,
+# ---------------Fig 1(c): 4-qubit GHZ state----------------------------------------------------------------------------
+plot_info_latt(info_latt_c, ax2, colormap_info,
                indicate_ints=True,
                linewidth_ints=line_ints,
                color_ints=color_ints,
@@ -275,15 +230,15 @@ ax2.set_xlim(-0.1, 1.1)
 ax2.set_ylim(0.0, 1.0)
 ax2.set_xticks(ticks=[0.12, 0.88], labels=['0', f'{4 - 1}'])
 ax2.set_yticks(ticks=[0.12, 0.88], labels=['0', f'{4 - 1}'])
-ax2.text(0.72, 0.85, '$\\vert$GHZ$\\rangle$', fontsize=fontsize-3)
 ax2.tick_params(which='major', width=0.75, labelsize=fontsize)
 ax2.tick_params(which='major', length=6, labelsize=fontsize)
 ax2.tick_params(which='minor', width=0.75, labelsize=fontsize)
 ax2.tick_params(which='minor', length=3, labelsize=fontsize)
+ax2.text(0.72, 0.85, '$\\vert$GHZ$\\rangle$', fontsize=fontsize-3)
 ax2.axis('on')
 
 
-# Stabilizer group to the side
+# GHZ stabilizer group to the side
 ax2.text(1.28, 0.92, '$\\mathcal{G}_{\\rm GHZ}$ ', fontsize=fontsize-2)
 ax2.text(1.15, 0.77, '$\\underline{\ell = 3}$', fontsize=fontsize-5)
 ax2.text(1.45, 0.77, '$\\underline{\ell = 2}$', fontsize=fontsize-5)
@@ -298,8 +253,8 @@ ax2.text(1.47, 0.26, text_l1, fontsize=fontsize-10, family='monospace')
 ax2.text(1.55, 0.05, '$\\emptyset$', fontsize=fontsize-7, family='monospace')
 
 
-# ------------------Fig1(d) Random stab---------------------------------------------------------------------------------
-plot_info_latt(info_latt, ax3, colormap_info,
+# ------------------Fig1(d): Random stab from the GHZ state ------------------------------------------------------------
+plot_info_latt(info_latt_d, ax3, colormap_info,
                indicate_ints=True,
                linewidth_ints=line_ints,
                color_ints=color_ints,
@@ -311,16 +266,16 @@ ax3.set_xlim(-0.1, 1.1)
 ax3.set_ylim(0.0, 1.0)
 ax3.set_xticks(ticks=[0.05, 0.95], labels=['0', f'{9}'])
 ax3.set_yticks(ticks=[0.05, 0.95], labels=['0', f'{9}'])
-ax3.text(0.62, 0.85, '$\\mathcal{U}_{\\mathcal{C}} \\vert$GHZ$\\rangle$', fontsize=fontsize-3)
 ax3.tick_params(which='major', width=0.75, labelsize=fontsize)
 ax3.tick_params(which='major', length=6, labelsize=fontsize)
 ax3.tick_params(which='minor', width=0.75, labelsize=fontsize)
 ax3.tick_params(which='minor', length=3, labelsize=fontsize)
+ax3.text(0.62, 0.85, '$\\mathcal{U}_{\\mathcal{C}} \\vert$GHZ$\\rangle$', fontsize=fontsize-3)
 ax3.axis('on')
 
 
-# -------------------Fig 1(e): Short-range magic------------------------------------------------------------------------
-plot_info_latt(info_latt_srm, ax4, colormap_info,
+# -------------------Fig 1(e): Short-range nonstabilizer state ---------------------------------------------------------
+plot_info_latt(info_latt_e, ax4, colormap_info,
                indicate_ints=True,
                linewidth_ints=line_ints,
                color_ints=color_ints,
@@ -332,24 +287,24 @@ ax4.set_xlim(-0.1, 1.1)
 ax4.set_ylim(0.0, 1.0)
 ax4.set_xticks(ticks=[0.05, 0.95], labels=['0', f'{9}'])
 ax4.set_yticks(ticks=[0.05, 0.95], labels=['0', f'{9}'])
-ax4.text(0.62, 0.85, '$\\mathcal{U}_{\\mathcal{C}T} \\vert 0\\rangle ^{\\otimes 10}$', fontsize=fontsize-3)
 ax4.tick_params(which='major', width=0.75, labelsize=fontsize)
 ax4.tick_params(which='major', length=6, labelsize=fontsize)
 ax4.tick_params(which='minor', width=0.75, labelsize=fontsize)
 ax4.tick_params(which='minor', length=3, labelsize=fontsize)
+ax4.text(0.62, 0.85, '$\\mathcal{U}_{\\mathcal{C}T} \\vert 0\\rangle ^{\\otimes 10}$', fontsize=fontsize-3)
 ax4.axis('on')
 
 
-# -------------------Fig 1(g): Info per scale SRM---------------------------------------------------------------
-ax5_1.plot(interp_scales_srm, interp_average_srm,
-           marker='None',
-           color=color_info_per_scale1)
-ax5_1.plot(scales, info_per_scale_srm,
-         marker='o',
-         markersize=4,
-         linestyle='none',
-         color=color_info_per_scale1)
-ax5_1.fill_between(interp_scales_srm, interp_average_srm, -0.2,
+# -------------------Fig 1(g): Info per scale short-range nonstabilizer state ------------------------------------------
+ax5_1.plot(interp_scales_g, interp_average_g,
+                   marker='None',
+                   color=color_info_per_scale1)
+ax5_1.plot(scales, info_per_scale_g,
+                   marker='o',
+                   markersize=4,
+                   linestyle='none',
+                   color=color_info_per_scale1)
+ax5_1.fill_between(interp_scales_g, interp_average_g, -0.2,
                    color=color_info_per_scale1,
                    alpha=0.2)
 ax5_1.set_xlim(-0.2, n_qubits - 1+0.2)
@@ -363,6 +318,12 @@ ax5_1.tick_params(which='major', length=6, labelsize=fontsize)
 ax5_1.tick_params(which='minor', width=0.75, labelsize=fontsize)
 ax5_1.tick_params(which='minor', length=3, labelsize=fontsize)
 yminor_ticks = [3.5]
+ax5_1.text(7, 1, '$\\Gamma=0$', fontsize=fontsize-3)
+ax5_1.text(2.4, 2.1, '$\\Omega=10$', fontsize=fontsize-3)
+ax5_1.text(4, 5,  '$\\mathcal{U}_{\\mathcal{C}T} \\vert 0\\rangle ^{\\otimes 10}$', fontsize=fontsize-3)
+ax5_1.set_position([pos2.x0 + 0.035, pos4.y0, pos2.width - 0.071, pos4.height * 0.4])
+
+# Fixed position in the subgridspec
 ax5_1.yaxis.set_minor_locator(plt.FixedLocator(yminor_ticks))
 label = ax5_1.xaxis.get_label()
 x, y = label.get_position()
@@ -370,24 +331,20 @@ label.set_position((x + 0.3, y))
 label = ax5_1.yaxis.get_label()
 x, y = label.get_position()
 label.set_position((x, y - 0.2))
-ax5_1.text(7, 1, '$\\Gamma=0$', fontsize=fontsize-3)
-ax5_1.text(2.4, 2.1, '$\\Omega=10$', fontsize=fontsize-3)
-ax5_1.text(4, 5,  '$\\mathcal{U}_{\\mathcal{C}T} \\vert 0\\rangle ^{\\otimes 10}$', fontsize=fontsize-3)
-ax5_1.set_position([pos2.x0 + 0.035, pos4.y0, pos2.width - 0.071, pos4.height * 0.4])
 
 
 
 
-# -------------------Fig 1(f): Info per scale stab---------------------------------------------------------------
-ax5_2.plot(interp_scales_2, interp_average_2,
-           marker='None',
-           color=color_info_per_scale1)
-ax5_2.plot(scales, info_per_scale_2,
-         marker='o',
-         markersize=4,
-         linestyle='None',
-         color=color_info_per_scale1)
-ax5_2.fill_between(interp_scales_2, interp_average_2, -0.2,
+# -------------------Fig 1(f): Info per scale random stab from the GHZ state--------------------------------------------
+ax5_2.plot(interp_scales_f, interp_average_f,
+                   marker='None',
+                   color=color_info_per_scale1)
+ax5_2.plot(scales, info_per_scale_f,
+                   marker='o',
+                   markersize=4,
+                   linestyle='None',
+                   color=color_info_per_scale1)
+ax5_2.fill_between(interp_scales_f, interp_average_f, -0.2,
                    color=color_info_per_scale1,
                    alpha=0.2)
 ax5_2.set_xlim(-0.2, n_qubits - 1+0.2)
@@ -401,6 +358,8 @@ ax5_2.set_xticks(ticks=[0, (n_qubits / 2) , n_qubits - 1], labels=[])
 ax5_2.set_yticks(ticks=[0, 7])
 yminor_ticks = [3.5]
 ax5_2.yaxis.set_minor_locator(plt.FixedLocator(yminor_ticks))
+
+# Fixed position in the subgridspec
 ax5_2.tick_params(which='major', width=0.75, labelsize=fontsize)
 label = ax5_2.yaxis.get_label()
 x, y = label.get_position()
@@ -411,8 +370,6 @@ ax5_2.text(4, 5,  '$\\mathcal{U}_{\\mathcal{C}} \\vert$GHZ$\\rangle$', fontsize=
 pos5 = ax5_1.get_position()
 ax5_2.set_position([pos5.x0, pos5.y0 + 0.205, pos5.width, pos5.height])
 
-
-
 # Colorbar
 cbar_ax = fig1.add_subplot(gs[2:, 2])
 divider = make_axes_locatable(cbar_ax)
@@ -422,9 +379,6 @@ cbar_ax.set_axis_off()
 cbar.set_label(label='$i^{\ell}_n$', labelpad=15, fontsize=20, rotation='horizontal')
 cbar.ax.tick_params(which='major', width=0.75, labelsize=fontsize)
 cbar.ax.set_yticklabels(['0', '1', '2'])
-
-
-
 
 fig1.savefig('fig-1.pdf', format='pdf')
 plt.show()

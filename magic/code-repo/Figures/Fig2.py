@@ -1,45 +1,51 @@
-import os
-import re
-import numpy as np
+
+#%% Imports
+
+# Built-in modules
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from matplotlib.gridspec import GridSpec
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib import cm
-from scipy.interpolate import PchipInterpolator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pdf2image import convert_from_path
 from PIL import Image, ImageChops
 import seaborn as sns
-from modules.InfoLattice import plot_info_latt
-from modules.functions import *
 
-from load import (
-    load_Gamma,
-    load_Lambda,
-    load_information_per_scale,
-    load_information_lattice
-)
+# Information lattice and functions
+from InfoLattice import plot_info_latt
+from functions import *
 
 
+#%% Load data
+file_list = ["data-fig2.h5"]
+data_dict = load_my_data(file_list, "../data")
 
-#%% Configuration
-DATA_DIR = 'final-data-potts'
-SYSTEM_SIZES = [8, 10, 12, 14] #[8, 9, 10, 11, 12]
-J_VALUE = 1.0
-H_VALUES = sorted({
-    float(m.group('h'))
-    for fname in os.listdir(DATA_DIR)
-    if (m := re.match(
-          rf'lowEnergyStates_N(?P<N>\d+)_J{J_VALUE:.3f}_h(?P<h>\d+\.\d{{3}})\.h5',
-          fname))
-    and int(m.group('N')) in SYSTEM_SIZES
-})
-INFO_H = [0, 0.75]
+# Main figure
+system_sizes = data_dict[file_list[0]]['main_figure']['system_size']
+J_values = data_dict[file_list[0]]['main_figure']['J_values']
+h_values = data_dict[file_list[0]]['main_figure']['h_values']
+gamma_values = data_dict[file_list[0]]['main_figure']['gamma_values']
+gamma_folded_values = data_dict[file_list[0]]['main_figure']['gamma_folded_values']
+
+# Left inset
+h_value_left = data_dict[file_list[0]]['left_inset']['h_values']
+J_values_left = data_dict[file_list[0]]['left_inset']['J_values']
+L_value_left = data_dict[file_list[0]]['left_inset']['L_value']
+interp_scales_0 = data_dict[file_list[0]]['left_inset']['interp_scales_0']
+interp_avg_0 = data_dict[file_list[0]]['left_inset']['interp_avg_0']
+info_scale_0 = data_dict[file_list[0]]['left_inset']['info_scale_0']
+interp_scales_075 = data_dict[file_list[0]]['left_inset']['interp_scales_075']
+interp_avg_075 = data_dict[file_list[0]]['left_inset']['interp_avg_075']
+info_scale_075 = data_dict[file_list[0]]['left_inset']['info_scale_075']
+
+# Right inset
+h_values_right = data_dict[file_list[0]]['right_inset']['h_value']
+L_value_right = data_dict[file_list[0]]['right_inset']['L_value']
+info_latt_load = data_dict[file_list[0]]['right_inset']['info_lattice']
 
 
 
-#%% Figure
+#%% Figures
 
 # Format
 font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 22, }
@@ -49,6 +55,7 @@ axcolour = ['#FF7D66', '#FF416D', '#00B5A1', '#3F6CFF']
 color_list = ['#FF7256', '#00BFFF', '#00C957', '#9A32CD', '#FFC125']
 fontsize=20
 
+# Figure grid
 fig1 = plt.figure(figsize=(8, 8))
 gs = GridSpec(4, 1, figure=fig1, wspace=0.5, hspace=0.6)
 ax00 = fig1.add_subplot(gs[0, 0])
@@ -56,14 +63,12 @@ ax1 = fig1.add_subplot(gs[1:, 0])
 ax0 = ax1.inset_axes([0.46, 0.32, 0.55, 0.55])
 ax2 = ax1.inset_axes([0.07, 0.1, 0.28, 0.3])
 
-
 # Colormap
 min, max = 0, 2
 palette_info = sns.color_palette("Blues", as_cmap=True)
 colors_info = palette_info(np.linspace(0.1, 0.9, 100))
 colors_info[0] = [1, 1, 1, 1]
 colormap_info = LinearSegmentedColormap.from_list("custom_colormap", colors_info)
-norm = Normalize(vmin=min, vmax=max)
 colorbar_info = cm.ScalarMappable(norm=Normalize(vmin=min, vmax=max), cmap=colormap_info)
 color_ints = 'royalblue'
 line_ints = 2
@@ -78,16 +83,15 @@ palette_info_lattice = sns.color_palette("Blues", as_cmap=True)
 colors_info_lattice = palette_info_lattice(np.linspace(0.1, 0.9, 100))
 colors_info_lattice[0] = [1, 1, 1, 1]
 colormap_info_lattice = LinearSegmentedColormap.from_list("custom_colormap", colors_info_lattice)
-norm = Normalize(vmin=min, vmax=max)
 colorbar_info_lattice = cm.ScalarMappable(norm=Normalize(vmin=min, vmax=max), cmap=colormap_info_lattice)
 
 
 
-# ---------------- Folding sketch ----------------------------------------------------------
+# ---------------- Folding sketch --------------------------------------------------------------------------------------
 # Load image and crop whitespace
 images = convert_from_path("sketch.pdf")
 images[0].save("sketch.png", "PNG")
-im = Image.open("sketch.png")
+im = Image.open("./sketch.png")
 bg = Image.new(im.mode, im.size, im.getpixel((0,0)))  # background color
 diff = ImageChops.difference(im, bg)
 bbox = diff.getbbox()
@@ -106,7 +110,6 @@ ax00.text(610 * 3, 330 * 3, '$3$', fontsize=fontsize)
 ax00.text(770 * 3, 330 * 3, '$4$', fontsize=fontsize)
 ax00.text(940 * 3, 330 * 3, '$5$', fontsize=fontsize)
 ax00.text(1035 * 3, 120 * 3, 'Folding', fontsize=fontsize-5)
-# ax00.text(1100, 400, '$n_{\\rm folded}$: $0$', fontsize=fontsize)
 ax00.text(1260 * 3, 410 * 3, '$n\'$:', fontsize=fontsize)
 ax00.text(1390 * 3, 410 * 3, '$0$', fontsize=fontsize)
 ax00.text(1575 * 3, 410 * 3, '$1$', fontsize=fontsize)
@@ -121,15 +124,12 @@ ax00.text(1705 * 3, -20 * 3, '$2  {\\scriptstyle \\cup}$'+'$3$', fontsize=fontsi
 
 # -----------------Fig 2(a): Example information lattice ---------------------------------------------------------------
 
-path = os.path.join(DATA_DIR, f'lowEnergyStates_N{6}_J{J_VALUE:.3f}_h{0.0:.3f}.h5')
-info_latt_load = load_information_lattice(d=0, file_path=path)[0]
+# Load info lattice to a dictionary
 info_latt = {}
-L = 12
-
 for l in range(len(info_latt_load)):
     local_info = []
     for n in range(len(info_latt_load[l])):
-        if n < L - l:
+        if n < L_value_right - l:
             local_info.append(info_latt_load[l][n])
     info_latt[l+1] = np.array(local_info)
 
@@ -142,8 +142,6 @@ plot_info_latt(info_latt, ax0, colormap_info_lattice,
                max_value=1)
 ax0.set_xlabel('$n$', fontsize=fontsize, labelpad=-15)
 ax0.set_ylabel('$\ell$', fontsize=fontsize, labelpad=-20)
-# ax0.set_xlim(-0.1, 1.1)
-# ax0.set_ylim(0.0, 1.0)
 ax0.set_xticks(ticks=[0.025, 0.975], labels=['0', f'{11}'])
 ax0.set_yticks(ticks=[0.025, 0.97], labels=['0', f'{11}'])
 ax0.tick_params(which='major', width=0.75, labelsize=fontsize)
@@ -156,7 +154,6 @@ ax0.axis('on')
 divider = make_axes_locatable(ax0)
 cax = divider.append_axes("right", size="6%", pad=0.1)
 cbar = fig1.colorbar(colorbar_info_lattice, cax=cax, orientation='vertical', ticks=[0, 1])
-# cbar_ax.set_axis_off()
 cbar.set_label(label='$i^{\ell}_n$', labelpad=-3, fontsize=20, rotation='horizontal')
 cbar.ax.tick_params(which='major', width=0.75, labelsize=fontsize)
 cbar.ax.set_yticklabels(['0', '1'])
@@ -165,32 +162,10 @@ label.set_position((-0.3, 0.6))
 ax0.text(0.05, 0.85, '$h=0$', fontsize=fontsize)
 
 
-# -----------------Fig 2(c): Gamma/ Lambda vs h ------------------------------------------------------------------------
+# -----------------Fig 2(c): Gamma/ Gamma folded vs h ------------------------------------------------------------------------
 
-gamma_storage = np.zeros((len(SYSTEM_SIZES), len(H_VALUES)), dtype=np.float64)
-gamma_folded_storage = np.zeros((len(SYSTEM_SIZES), len(H_VALUES)), dtype=np.float64)
-
-
-for i, N in enumerate(SYSTEM_SIZES):
-    gamma_vals, lambda_vals = [], []
-    for h in H_VALUES:
-        path = os.path.join(
-            DATA_DIR,
-            f'lowEnergyStates_N{N}_J{J_VALUE:.3f}_h{h:.3f}.h5'
-        )
-        if os.path.exists(path):
-            gamma, _ = load_Gamma(d=0, file_path=path)
-            lam,   _ = load_Lambda(d=0, file_path=path)
-            gamma_vals.append(np.real(gamma))
-            lambda_vals.append(np.real(lam))
-        else:
-            gamma_vals.append(np.nan)
-            lambda_vals.append(np.nan)
-
-    gamma_storage[i, :] = gamma_vals
-    gamma_folded_storage[i, :] = lambda_vals
-
-    ax1.plot(H_VALUES, gamma_vals,
+for i, N in enumerate(system_sizes):
+    ax1.plot(h_values, gamma_values[i, :],
              marker='o',
              markersize=7,
              markerfacecolor='None',
@@ -199,7 +174,7 @@ for i, N in enumerate(SYSTEM_SIZES):
              color=colors_L[i],
              label=f'${2 * N}$',
              alpha=1)
-    ax1.plot(H_VALUES, lambda_vals,
+    ax1.plot(h_values, gamma_folded_values[i, :],
              marker='^',
              markerfacecolor='None',
              markersize=7,
@@ -237,7 +212,6 @@ leg1 = ax1.legend(loc='center left',
            frameon=False,
            fontsize=fontsize,
            bbox_to_anchor=(0.06, 0.6))
-
 for line in leg1.get_lines():
     line.set_marker('None')
     line.set_linewidth(2)
@@ -249,50 +223,42 @@ ax1.plot(0.63, 0.33, marker='o', color='k', markersize=7, markerfacecolor='None'
 
 
 # ---------------------------Fig 2(d): Info per scale ------------------------------------------------------------------
-scales = None
-L = 12
-for j, h in enumerate(INFO_H):
-    path = os.path.join(
-        DATA_DIR,
-        f'lowEnergyStates_N6_J{J_VALUE:.3f}_h{h:.3f}.h5'
-    )
-    if not os.path.exists(path):
-        continue
-    data, attrs = load_information_per_scale(d=0, file_path=path)
-    vals = np.vstack([data[field] for field in data.dtype.names]).T
-    y = vals[0, :-1]
-    scales = np.arange(len(y)) if scales is None else scales
-    interp_func = PchipInterpolator(scales, y)
-    interp_scales = np.arange(scales[0]-0.2, scales[-1] + 0.1, 0.1)
-    interp_average = interp_func(interp_scales)
+scales = np.arange(0, L_value_left)
 
-    if j==0:
-        gamma = np.sum(y[int(0.5 * L):])
-        zorder=10
-        interp_scales_0 = interp_scales
-        interp_avg_0 = interp_average
-        info_scale_0 = y
-    else:
-        zorder=0
-        interp_scales_075 = interp_scales
-        interp_avg_075 = interp_average
-        info_scale_075 = y
+ax2.plot(interp_scales_0, interp_avg_0,
+         marker='None',
+         linestyle='solid',
+         color=colors_scale[0],
+         label=fr'${h_value_left[0]:.2f}$',
+         zorder=10)
+ax2.fill_between(interp_scales_0, interp_avg_0, -0.2,
+         color=colors_scale[0],
+         alpha=0.2,
+         zorder=10)
+ax2.plot(scales, info_scale_0,
+         marker='o',
+         markersize=4,
+         linestyle='None',
+         color=colors_scale[0],
+         zorder=10)
+ax2.plot(interp_scales_075, interp_avg_075,
+         marker='None',
+         linestyle='solid',
+         color=colors_scale[1],
+         label=fr'${h_value_left[1]:.2f}$',
+         zorder=0)
+ax2.fill_between(interp_scales_075, interp_avg_075, -0.2,
+         color=colors_scale[1],
+         alpha=0.2,
+         zorder=0)
+ax2.plot(scales, info_scale_075,
+         marker='o',
+         markersize=4,
+         linestyle='None',
+         color=colors_scale[1],
+         zorder=0)
 
-    ax2.plot(interp_scales, interp_average,
-             marker='None',
-             linestyle='solid',
-             color=colors_scale[j],
-             label=fr'${h:.2f}$',
-             zorder=zorder)
-    ax2.fill_between(interp_scales, interp_average, -0.2,
-             color=colors_scale[j], alpha=0.2, zorder=zorder)
-    ax2.plot(scales, y,
-             marker='o',
-             markersize=4,
-             linestyle='None',
-             color=colors_scale[j],
-             zorder=zorder)
-
+gamma = np.sum(info_scale_0[int(0.5 * L_value_left):])
 
 ax2.set_xlabel('$\ell$', fontsize=fontsize, labelpad=-17)
 ax2.set_ylabel('$I^\ell$', fontsize=fontsize, rotation='horizontal', labelpad=-13)
@@ -324,43 +290,7 @@ ax2.legend(loc='upper center',
            bbox_to_anchor=(0.61, 1))
 ax2.text(4.8, 1.5, f'$\\Gamma={gamma :.3f}$', fontsize=fontsize-5, color=colors_scale[0])
 
-
-
-data_dir = '.'
-file_list = os.listdir(data_dir)
-filename = '../code-repo/data/data-fig2.h5'
-filepath = os.path.join(data_dir, filename)
-
-with h5py.File(filepath, 'w') as f:
-    main_figure = f.create_group('main_figure')
-    store_my_data(main_figure, 'system_size',         SYSTEM_SIZES)
-    store_my_data(main_figure, 'h_values',            H_VALUES)
-    store_my_data(main_figure, 'J_values',            J_VALUE)
-    store_my_data(main_figure, 'gamma_values',        gamma_storage)
-    store_my_data(main_figure, 'gamma_folded_values', gamma_folded_storage)
-
-    left_inset = f.create_group('left_inset')
-    store_my_data(left_inset, 'h_values',             INFO_H)
-    store_my_data(left_inset, 'J_values',            J_VALUE)
-    store_my_data(left_inset, 'L_value',             12)
-    store_my_data(left_inset, 'interp_scales_0',     interp_scales_0)
-    store_my_data(left_inset, 'interp_avg_0',        interp_avg_0)
-    store_my_data(left_inset, 'info_scale_0',        info_scale_0)
-    store_my_data(left_inset, 'interp_scales_075',   interp_scales_075)
-    store_my_data(left_inset, 'interp_avg_075',      interp_avg_075)
-    store_my_data(left_inset, 'info_scale_075',      info_scale_075)
-
-    right_inset = f.create_group('right_inset')
-    store_my_data(right_inset, 'L_value',             12)
-    store_my_data(right_inset, 'h_value',             0)
-    store_my_data(right_inset, 'J_values',             J_VALUE)
-    store_my_data(right_inset, 'info_lattice',        info_latt_load)
-
-
-
 # Save figure with tight white boundary
 plt.savefig("fig-2.pdf", bbox_inches='tight', pad_inches=0.1)
 plt.show()
-
-
 
